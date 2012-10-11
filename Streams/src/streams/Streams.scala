@@ -437,4 +437,4 @@ object Streams {
 // multiplex/split (backpressure) /duplicate
 // scala pipes, db toaster updated
 // optimization: ordered/unordered stream, flush? window? aggregate
-// streamit compiler
+// streamit compiler?
