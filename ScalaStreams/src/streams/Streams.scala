@@ -1,14 +1,22 @@
 package streams
 
+import scala.actors.Actor._
+
 abstract class StreamOp[A] {
   def onData(data: A)
 }
 
 class MergeOp[A](next: StreamOp[A]) extends StreamOp[A] {
-  // buffer, consumer/producer?
-  // 
   def onData(data: A) = synchronized {
-    next.onData(data)
+    mergeActor ! data
+  }
+  
+  val mergeActor = actor {
+    loop {
+      react {
+        case data: A => next.onData(data)
+      }
+    }
   }
 }
 
@@ -97,28 +105,6 @@ class PrependOp[A](list: List[A], next: StreamOp[A]) extends StreamOp[A] {
   def onData(data: A) = next.onData(data)
 }
 
-//remove
-class DelayOp[A](n: Int, next: StreamOp[A]) extends StreamOp[A] {
-  val buffer = new scala.collection.mutable.Queue[A]
-  var buffering = true
-  
-  def onData(data: A) = {
-    if (buffering && buffer.size <= n) {
-      if (buffer.size == n) {
-        while (!buffer.isEmpty) {
-          next.onData(buffer.dequeue)
-        }
-        buffering = false
-        next.onData(data)
-      } else {
-        buffer += data
-      }
-    } else {
-      next.onData(data)
-    }
-  }
-}
-
 class OffsetOp[A](n: Int, next: StreamOp[A]) extends StreamOp[A] {
   val buffer = new scala.collection.mutable.Queue[A]
   
@@ -165,45 +151,34 @@ class GroupByStreamOp[A, B](keyFun: A => B, next: StreamOp[Map[B, List[A]]]) ext
 class StreamFunctions {
   
   def equiJoin[A, B, K] (keyFunA: A => K, keyFunB: B => K, next: StreamOp[(A, B)]): (StreamOp[A], StreamOp[B]) = {
-    val aMap = new scala.collection.mutable.HashMap[K, A]
-    val bMap = new scala.collection.mutable.HashMap[K, B]  // Should this be List[B]?
-    
-    // Concurrency?
-    
-/*    Table 1
- * name     id     dep
- * Vera     1      IC
- * Yannick  2      IC
- * David    3      PH
- * 
- *    Table 2
- * dep      name
- * IC       Informatique
- * PH       Physique
- * 
- * PH       Physique Nucleaire
- * 
- * join on dep, cross product?
- * windowjoin?
- */
-    
-    val left = new StreamOp[A] {
-      def onData(data: A) = {
-        val key = keyFunA(data)
-        bMap.get(key) match {
-          case None => aMap += ((key, data)) // Could check it's unique
-          case Some(b) => next.onData((data, b)) // Could remove once it's used up?
+    val aMap = new scala.collection.mutable.HashMap[K, List[A]]
+    val bMap = new scala.collection.mutable.HashMap[K, List[B]]
+
+    val joinActor = actor {
+      loop {
+        react {
+          case (as: List[A], bs: List[B]) => (for (a <- as; b <- bs) yield (a, b)) foreach next.onData
         }
       }
     }
-    val right = new StreamOp[B] {
-      def onData(data: B) = {
-        val key = keyFunB(data)
-        aMap.get(key) match {
-          case None => bMap += ((key, data)) // Could check it's unique
-          case Some(a) => next.onData((a, data)) // Could remove once it's used up?
-        }
+
+    def input[C](map: scala.collection.mutable.HashMap[K, List[C]], keyFun: C => K)(data: C) = aMap.synchronized {
+      val key = keyFun(data)
+      map += ((key, data :: (map.get(key) match {
+        case None => Nil
+        case Some(list) => list
+      })))
+      (aMap.get(key), bMap.get(key)) match {
+        case (Some(as), Some(bs)) => joinActor ! (as, bs)
+        case _ =>
       }
+    }
+    
+    val left = new StreamOp[A] {
+      def onData(data: A) = input(aMap, keyFunA)(data)
+    }
+    val right = new StreamOp[B] {
+      def onData(data: B) = input(bMap, keyFunB)(data)
     }
     (left, right)
   }
@@ -402,14 +377,6 @@ object Streams {
     new ListInput(list, new PrependOp[Int](-1 :: 0 :: Nil, op17))
     op17.verify()
     
-    val op18 = new AssertEqualsOp[Int](Nil, "DelayOp 1")
-    new ListInput(list, new DelayOp[Int](4, op18))
-    op18.verify()
-    
-    val op19 = new AssertEqualsOp[Int](list, "DelayOp 2")
-    new ListInput(list, new DelayOp[Int](3, op19))
-    op19.verify()
-    
     val op20 = new AssertEqualsOp[Int](list take 3, "OffsetOp")
     new ListInput(list, new OffsetOp[Int](1, op20))
     op20.verify()
@@ -426,11 +393,16 @@ object Streams {
     new ListInput(1 :: 0 :: 1 :: Nil, new GroupByStreamOp[Int, Int](x => x, op23))
     op23.verify()
 
+    // TODO update test, better testing strategy for actors
     val op24 = new AssertEqualsOp[(Int, Int)]((2, 2) :: (1,1) :: (3,3) :: (4,4) :: (1,1) :: Nil, "equiJoin")
     val (a3, b3) = new StreamFunctions().equiJoin[Int, Int, Int](x => x, x => x, op24)
     new ListInput(list, a3)
     new ListInput(0 :: 2 :: 1 :: 3 :: 4 :: 1 :: Nil, b3)
     op24.verify()
+    
+    val op25 = new AssertEqualsOp[Int](list, "MergeOp")
+    new ListInput(list, new MergeOp[Int](op25))
+    op25.verify()
   }
 }
 
