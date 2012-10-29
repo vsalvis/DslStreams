@@ -4,7 +4,11 @@ import scala.actors.Actor._
 
 abstract class StreamOp[A] {
   def onData(data: A)
+  
+  def flush
 }
+
+case class Flush
 
 class MergeOp[A](next: StreamOp[A]) extends StreamOp[A] {
   def onData(data: A) = synchronized {
@@ -14,18 +18,24 @@ class MergeOp[A](next: StreamOp[A]) extends StreamOp[A] {
   val mergeActor = actor {
     loop {
       react {
+        case Flush => next.flush
         case data: A => next.onData(data)
       }
     }
   }
+  def flush = mergeActor !? Flush
 }
 
 class MapOp[A, B](f: A => B, next: StreamOp[B]) extends StreamOp[A] {
   def onData(data: A) = next.onData(f(data))
+  
+  def flush = next.flush
 }
 
 class FilterOp[A](p: A => Boolean, next: StreamOp[A]) extends StreamOp[A] {
   def onData(data: A) = if (p(data)) next.onData(data)
+  
+  def flush = next.flush
 }
 
 class ReduceOp[A](f: (A, A) => A, next: StreamOp[A]) extends StreamOp[A] {
@@ -39,6 +49,11 @@ class ReduceOp[A](f: (A, A) => A, next: StreamOp[A]) extends StreamOp[A] {
     }
     next.onData(result)
   }
+  
+  def flush = {
+    result = null.asInstanceOf[A]
+    next.flush
+  }
 }
 
 class FoldOp[A, B](f: (A, B) => B, z: B, next: StreamOp[B]) extends StreamOp[A] {
@@ -48,10 +63,18 @@ class FoldOp[A, B](f: (A, B) => B, z: B, next: StreamOp[B]) extends StreamOp[A] 
   def onData(data: A) = {
     result = f(data, result); next.onData(result)
   }
+  
+  def flush = {
+    result = z
+    next.flush
+    next.onData(result)
+  }
 }
 
 class FlatMapOp[A, B](f: A => List[B], next: StreamOp[B]) extends StreamOp[A] {
   def onData(data: A) = f(data) foreach next.onData
+
+  def flush = next.flush
 }
 
 class DropOp[A](n: Int, next: StreamOp[A]) extends StreamOp[A] {
@@ -62,6 +85,11 @@ class DropOp[A](n: Int, next: StreamOp[A]) extends StreamOp[A] {
     } else {
       next.onData(data)
     }
+  }
+  
+  def flush = {
+    num = n
+    next.flush
   }
 }
 
@@ -75,6 +103,11 @@ class DropWhileOp[A](p: A => Boolean, next: StreamOp[A]) extends StreamOp[A] {
       next.onData(data)
     }
   }
+  
+  def flush = {
+    dropping = true
+    next.flush
+  }
 }
 
 class TakeOp[A](n: Int, next: StreamOp[A]) extends StreamOp[A] {
@@ -84,6 +117,11 @@ class TakeOp[A](n: Int, next: StreamOp[A]) extends StreamOp[A] {
       num -= 1
       next.onData(data)
     }
+  }
+  
+  def flush = {
+    num = n
+    next.flush
   }
 }
 
@@ -97,12 +135,22 @@ class TakeWhileOp[A](p: A => Boolean, next: StreamOp[A]) extends StreamOp[A] {
       next.onData(data)
     }
   }
+  
+  def flush = {
+    taking = true
+    next.flush
+  }
 }
 
 class PrependOp[A](list: List[A], next: StreamOp[A]) extends StreamOp[A] {
   list foreach next.onData
   
   def onData(data: A) = next.onData(data)
+  
+  def flush = {
+    next.flush
+    list foreach next.onData
+  }
 }
 
 class OffsetOp[A](n: Int, next: StreamOp[A]) extends StreamOp[A] {
@@ -114,7 +162,11 @@ class OffsetOp[A](n: Int, next: StreamOp[A]) extends StreamOp[A] {
     }
     buffer += data
   }
-  
+
+  def flush = {
+    buffer.dequeueAll(_ => true)
+    next.flush
+  }
 }
 
 class GroupByOp[A, B](keyFun: A => B, streamOpFun: B => StreamOp[A]) extends StreamOp[A] {
@@ -131,6 +183,11 @@ class GroupByOp[A, B](keyFun: A => B, streamOpFun: B => StreamOp[A]) extends Str
       case Some(op) => op.onData(data)
     }
   }
+
+  // flush map or flush existing streams?
+  def flush = {
+    map.values foreach { _.flush }
+  }
 }
 
 class GroupByStreamOp[A, B](keyFun: A => B, next: StreamOp[Map[B, List[A]]]) extends StreamOp[A] {
@@ -146,6 +203,11 @@ class GroupByStreamOp[A, B](keyFun: A => B, next: StreamOp[Map[B, List[A]]]) ext
     }
     next.onData(map.toMap)
   }
+  
+  def flush = {
+    map.clear
+    next.flush
+  }
 }
 
 class StreamFunctions {
@@ -157,6 +219,7 @@ class StreamFunctions {
     val joinActor = actor {
       loop {
         react {
+          case Flush => next.flush
           case (as: List[A], bs: List[B]) => (for (a <- as; b <- bs) yield (a, b)) foreach next.onData
         }
       }
@@ -176,9 +239,20 @@ class StreamFunctions {
     
     val left = new StreamOp[A] {
       def onData(data: A) = input(aMap, keyFunA)(data)
+      
+      def flush = {
+        joinActor !? Flush
+        aMap.clear
+        bMap.clear
+      }
     }
     val right = new StreamOp[B] {
       def onData(data: B) = input(bMap, keyFunB)(data)
+      def flush = {
+        joinActor !? Flush
+        aMap.clear
+        bMap.clear
+      }
     }
     (left, right)
   }
@@ -195,6 +269,12 @@ class StreamFunctions {
 	      next.onData(f(data, rightBuffer.dequeue))
 	    }
       }
+	  
+	  def flush = {
+	    leftBuffer.clear
+	    rightBuffer.clear
+	    next.flush
+	  }
 	}
   
 	val right = new StreamOp[B] {
@@ -205,6 +285,12 @@ class StreamFunctions {
 	      next.onData(f(leftBuffer.dequeue, data))
 	    }
       }
+
+	  def flush = {
+	    leftBuffer.clear
+	    rightBuffer.clear
+	    next.flush
+	  }
     } 
 	  
     (left, right)
@@ -222,7 +308,9 @@ class ElementInput[A](input: A, stream: StreamOp[A]) extends StreamInput[A](stre
 }
 
 
-abstract class StreamOutput[A] extends StreamOp[A]
+abstract class StreamOutput[A] extends StreamOp[A] {
+  def flush = {}
+}
 
 class PrintlnOp[A] extends StreamOutput[A] {
   def onData(data: A) = println(data)
@@ -257,7 +345,7 @@ class AssertEqualsOp[A](expected: List[A], opDescription: String) extends Stream
     buffer += data
   }
   
-  def verify(reportSuccess: Boolean = true) = {
+  def verify(reportSuccess: Boolean = false) = {
     if (buffer.size < expected.size) {
       report("Not enough elements.")
     } else if (buffer.size > expected.size) {
@@ -403,6 +491,47 @@ object Streams {
     val op25 = new AssertEqualsOp[Int](list, "MergeOp")
     new ListInput(list, new MergeOp[Int](op25))
     op25.verify()
+    
+    // Flush test: flush is passed through
+    object FlushTest {
+      var ctr = 0
+    }
+    
+    class FlushTest(create: StreamOp[Int] => StreamOp[Int], onDataCalledWith: Option[Int] = None) {
+      FlushTest.ctr += 1
+      var isFlushed = false
+      val flusher = new StreamOp[Int] {
+        def onData(data: Int) = onDataCalledWith match { 
+          case None => println("onData of FlushTest has been called by " + FlushTest.ctr + " with data " + data)
+          case Some(`data`) => 
+          case Some(other) => println("onData of FlushTest has been called by " + FlushTest.ctr + " with data " + data + " instead of " + other)
+        }
+        
+        def flush = { isFlushed = true }
+      }
+      val s = create(flusher)
+      s.onData(1)
+      s.flush
+      if (!isFlushed) println("Not flushed: " + FlushTest.ctr) 
+    }
+    
+    new FlushTest(s => new MergeOp[Int](s), Some(1))
+    new FlushTest(s => new MapOp[Int, Int](x => x, s), Some(1))
+    new FlushTest(s => new FilterOp[Int](x => x > 2, s))
+    new FlushTest(s => new ReduceOp[Int]((x, y) => x + y, s), Some(1))
+    new FlushTest(s => new FoldOp[Int, Int]((x, y) => 0, 0, s), Some(0))
+    new FlushTest(s => new FlatMapOp[Int, Int](x => x :: Nil, s), Some(1))
+    new FlushTest(s => new DropOp[Int](1, s))
+    new FlushTest(s => new DropWhileOp[Int](x => x < 1, s), Some(1))
+    new FlushTest(s => new TakeOp[Int](1, s), Some(1))
+    new FlushTest(s => new TakeWhileOp[Int](x => x > 1, s))
+    new FlushTest(s => new PrependOp[Int](1 :: Nil, s), Some(1))
+    new FlushTest(s => new OffsetOp[Int](1, s))
+    new FlushTest(s => new GroupByOp[Int, Int](x => x, x => s), Some(1))
+//    new FlushTest(s => new GroupByStreamOp[Int, Int](x => x, s))
+    new FlushTest(s => new StreamFunctions().zipWith[Int, Int, Int](_ + _, s)._1)
+    new FlushTest(s => new StreamFunctions().zipWith[Int, Int, Int](_ + _, s)._2)
+//    new FlushTest(s => new StreamFunctions().equiJoin[Int, Int, Int](x => x, x => x, s))
   }
 }
 
