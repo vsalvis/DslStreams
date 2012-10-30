@@ -10,20 +10,21 @@ abstract class StreamOp[A] {
 
 case class Flush
 
-class MergeOp[A](next: StreamOp[A]) extends StreamOp[A] {
-  def onData(data: A) = synchronized {
-    mergeActor ! data
-  }
+class StreamSynchronizer[A] {
   
-  val mergeActor = actor {
+  def getSynchronizedStream(next: StreamOp[A]): StreamOp[A] = new StreamOp[A] {
+    def onData(data: A) = synchronizationActor ! (next, data)
+	def flush = synchronizationActor ! (next, Flush)
+  }
+
+  private val synchronizationActor = actor {
     loop {
       react {
-        case Flush => next.flush
-        case data: A => next.onData(data)
+        case (next: StreamOp[A], Flush) => next.flush 
+        case (next: StreamOp[A], data: A) => next.onData(data)
       }
     }
   }
-  def flush = mergeActor !? Flush
 }
 
 class MapOp[A, B](f: A => B, next: StreamOp[B]) extends StreamOp[A] {
@@ -184,7 +185,6 @@ class GroupByOp[A, B](keyFun: A => B, streamOpFun: B => StreamOp[A]) extends Str
     }
   }
 
-  // flush map or flush existing streams?
   def flush = {
     map.values foreach { _.flush }
   }
@@ -212,49 +212,32 @@ class GroupByStreamOp[A, B](keyFun: A => B, next: StreamOp[Map[B, List[A]]]) ext
 
 class StreamFunctions {
   
-  def equiJoin[A, B, K] (keyFunA: A => K, keyFunB: B => K, next: StreamOp[(A, B)]): (StreamOp[A], StreamOp[B]) = {
+  // Changed output to List[(A, B)], free GroupBy, can always flatten after
+  def equiJoin[A, B, K] (keyFunA: A => K, keyFunB: B => K, next: StreamOp[List[(A, B)]]): (StreamOp[A], StreamOp[B]) = {
     val aMap = new scala.collection.mutable.HashMap[K, List[A]]
     val bMap = new scala.collection.mutable.HashMap[K, List[B]]
 
-    val joinActor = actor {
-      loop {
-        react {
-          case Flush => next.flush
-          case (as: List[A], bs: List[B]) => (for (a <- as; b <- bs) yield (a, b)) foreach next.onData
+    class JoinOp[C](map: scala.collection.mutable.HashMap[K, List[C]], keyFun: C => K) extends StreamOp[C] {
+      def onData(data: C) = {
+        val key = keyFun(data)
+        map += ((key, data :: (map.get(key) match {
+          case None => Nil
+          case Some(list) => list
+        })))
+        (aMap.get(key), bMap.get(key)) match {
+          case (Some(as), Some(bs)) => next.onData(for (a <- as; b <- bs) yield (a, b))
+          case _ =>
         }
       }
-    }
-
-    def input[C](map: scala.collection.mutable.HashMap[K, List[C]], keyFun: C => K)(data: C) = aMap.synchronized {
-      val key = keyFun(data)
-      map += ((key, data :: (map.get(key) match {
-        case None => Nil
-        case Some(list) => list
-      })))
-      (aMap.get(key), bMap.get(key)) match {
-        case (Some(as), Some(bs)) => joinActor ! (as, bs)
-        case _ =>
+      
+      def flush = {
+        aMap.clear
+        bMap.clear
+        next.flush
       }
     }
     
-    val left = new StreamOp[A] {
-      def onData(data: A) = input(aMap, keyFunA)(data)
-      
-      def flush = {
-        joinActor !? Flush
-        aMap.clear
-        bMap.clear
-      }
-    }
-    val right = new StreamOp[B] {
-      def onData(data: B) = input(bMap, keyFunB)(data)
-      def flush = {
-        joinActor !? Flush
-        aMap.clear
-        bMap.clear
-      }
-    }
-    (left, right)
+    (new JoinOp(aMap, keyFunA), new JoinOp(bMap, keyFunB))
   }
   
   def zipWith[A, B, C] (f: (A, B) => C, next: StreamOp[C]): (StreamOp[A], StreamOp[B]) = {
@@ -262,7 +245,7 @@ class StreamFunctions {
     val rightBuffer = new scala.collection.mutable.Queue[B]
   
 	val left = new StreamOp[A] {
-	  def onData(data: A) = leftBuffer.synchronized {
+	  def onData(data: A) = {
 	    if (rightBuffer.isEmpty) {
 	      leftBuffer += data
 	    } else {
@@ -278,7 +261,7 @@ class StreamFunctions {
 	}
   
 	val right = new StreamOp[B] {
-	  def onData(data: B) = leftBuffer.synchronized {
+	  def onData(data: B) = {
 	    if (leftBuffer.isEmpty) {
 	      rightBuffer += data
 	    } else {
@@ -338,7 +321,7 @@ class NamedPrintOp[A] extends StreamOutput[A] {
   }
 }
 
-class AssertEqualsOp[A](expected: List[A], opDescription: String) extends StreamOutput[A] {
+class AssertEqualsOp[A](expected: List[A], opDescription: String, verifyOnFlush: Boolean = false) extends StreamOutput[A] {
   val buffer = new scala.collection.mutable.Queue[A]
   
   def onData(data: A) = {
@@ -355,9 +338,14 @@ class AssertEqualsOp[A](expected: List[A], opDescription: String) extends Stream
     } else if (reportSuccess) {
       println("Success: " + opDescription)
     }
-    
   }
-    
+  
+  override def flush() = {
+    if (verifyOnFlush) {
+      verify(true)
+    }
+  }
+  
   def report(error: String) = println(opDescription + ": " + error + " Expected: " + expected + " Actual: " + buffer.toList)
 }
 
@@ -387,8 +375,10 @@ object Streams {
   def main(args: Array[String]) {
     val list = 1 :: 2 :: 3 :: 4 :: Nil
     
-    //testTests
+//    testTests
    
+    // Test Inputs
+    
     val op0 = new AssertEqualsOp(1 :: Nil, "ElementInput")
     new ElementInput(1, op0)
     op0.verify()
@@ -396,6 +386,8 @@ object Streams {
     val op1 = new AssertEqualsOp(list, "ListInput")
     new ListInput(list, op1)
     op1.verify()
+    
+    // Test all Ops
     
     val op2 = new AssertEqualsOp(list map (_ + 1), "MapOp")
     new ListInput(list, new MapOp[Int, Int](_ + 1, op2))
@@ -481,18 +473,26 @@ object Streams {
     new ListInput(1 :: 0 :: 1 :: Nil, new GroupByStreamOp[Int, Int](x => x, op23))
     op23.verify()
 
-    // TODO update test, better testing strategy for actors
-    val op24 = new AssertEqualsOp[(Int, Int)]((2, 2) :: (1,1) :: (3,3) :: (4,4) :: (1,1) :: Nil, "equiJoin")
+    val op24 = new AssertEqualsOp[List[(Int, Int)]](((2, 2) :: Nil) :: ((1,1) :: Nil) :: ((3,3) :: Nil) :: ((4,4) :: Nil) :: ((1,1) :: (1,1) :: Nil) :: Nil, "equiJoin")
     val (a3, b3) = new StreamFunctions().equiJoin[Int, Int, Int](x => x, x => x, op24)
     new ListInput(list, a3)
     new ListInput(0 :: 2 :: 1 :: 3 :: 4 :: 1 :: Nil, b3)
     op24.verify()
     
-    val op25 = new AssertEqualsOp[Int](list, "MergeOp")
-    new ListInput(list, new MergeOp[Int](op25))
-    op25.verify()
+    // With synchronization
     
-    // Flush test: flush is passed through
+    print("synchronized equiJoin? ")
+    val op25 = new AssertEqualsOp[List[(Int, Int)]](((2, 2) :: Nil) :: ((1,1) :: Nil) :: ((3,3) :: Nil) :: ((4,4) :: Nil) :: ((1,1) :: (1,1) :: Nil) :: Nil, "synchronized equiJoin", true)
+    val (a4, b4) = new StreamFunctions().equiJoin[Int, Int, Int](x => x, x => x, op25)
+    val synch = new StreamSynchronizer[Int]
+    val (a5, b5) = (synch.getSynchronizedStream(a4), synch.getSynchronizedStream(b4))
+    new ListInput(list, a5)
+    new ListInput(0 :: 2 :: 1 :: 3 :: 4 :: 1 :: Nil, b5)
+    a5.flush
+    // op25 is verified on flush, "Success" has to be printed
+    
+    // Test Flush: only tests that flush is passed through
+    
     object FlushTest {
       var ctr = 0
     }
@@ -515,7 +515,6 @@ object Streams {
       if (!isFlushed) println("Not flushed: " + FlushTest.ctr) 
     }
     
-    new FlushTest(s => new MergeOp[Int](s), Some(1))
     new FlushTest(s => new MapOp[Int, Int](x => x, s), Some(1))
     new FlushTest(s => new FilterOp[Int](x => x > 2, s))
     new FlushTest(s => new ReduceOp[Int]((x, y) => x + y, s), Some(1))
@@ -528,11 +527,33 @@ object Streams {
     new FlushTest(s => new PrependOp[Int](1 :: Nil, s), Some(1))
     new FlushTest(s => new OffsetOp[Int](1, s))
     new FlushTest(s => new GroupByOp[Int, Int](x => x, x => s), Some(1))
-//    new FlushTest(s => new GroupByStreamOp[Int, Int](x => x, s))
     new FlushTest(s => new StreamFunctions().zipWith[Int, Int, Int](_ + _, s)._1)
     new FlushTest(s => new StreamFunctions().zipWith[Int, Int, Int](_ + _, s)._2)
-//    new FlushTest(s => new StreamFunctions().equiJoin[Int, Int, Int](x => x, x => x, s))
+
+    class GenericFlushTest[A, B](create: StreamOp[A] => StreamOp[B], onDataCalledWith: Option[A] = None) {
+      FlushTest.ctr += 1
+      var isFlushed = false
+      val flusher = new StreamOp[A] {
+        def onData(data: A) = onDataCalledWith match { 
+          case None => println("onData of FlushTest has been called by " + FlushTest.ctr + " with data " + data)
+          case Some(`data`) => 
+          case Some(other) => println("onData of FlushTest has been called by " + FlushTest.ctr + " with data " + data + " instead of " + other)
+        }
+        
+        def flush = { isFlushed = true }
+      }
+      val s = create(flusher)
+      s.flush
+      if (!isFlushed) println("Not flushed: " + FlushTest.ctr) 
+    }
+
+    new GenericFlushTest[Map[Int, List[Int]], Int](s => new GroupByStreamOp[Int, Int](x => x, s))
+    new GenericFlushTest[List[(Int, Int)], Int](s => new StreamFunctions().equiJoin[Int, Int, Int](x => x, x => x, s)._1)
+    new GenericFlushTest[List[(Int, Int)], Int](s => new StreamFunctions().equiJoin[Int, Int, Int](x => x, x => x, s)._2)
+    
+    println("END OF TESTS")
   }
+  
 }
 
 // multiplex/split (backpressure) /duplicate
