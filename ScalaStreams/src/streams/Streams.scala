@@ -14,7 +14,7 @@ class StreamSynchronizer[A] {
   
   def getSynchronizedStream(next: StreamOp[A]): StreamOp[A] = new StreamOp[A] {
     def onData(data: A) = synchronizationActor ! (next, data)
-	def flush = synchronizationActor ! (next, Flush)
+	def flush = synchronizationActor ! (next, Flush)  // should this be "?!" ?
   }
 
   private val synchronizationActor = actor {
@@ -47,8 +47,8 @@ class ReduceOp[A](f: (A, A) => A, next: StreamOp[A]) extends StreamOp[A] {
       result = data
     } else {
       result = f(result, data)
+      next.onData(result)
     }
-    next.onData(result)
   }
   
   def flush = {
@@ -59,7 +59,6 @@ class ReduceOp[A](f: (A, A) => A, next: StreamOp[A]) extends StreamOp[A] {
 
 class FoldOp[A, B](f: (A, B) => B, z: B, next: StreamOp[B]) extends StreamOp[A] {
   var result = z
-  next.onData(result)
   
   def onData(data: A) = {
     result = f(data, result); next.onData(result)
@@ -68,7 +67,6 @@ class FoldOp[A, B](f: (A, B) => B, z: B, next: StreamOp[B]) extends StreamOp[A] 
   def flush = {
     result = z
     next.flush
-    next.onData(result)
   }
 }
 
@@ -231,9 +229,8 @@ class StreamFunctions {
       }
       
       def flush = {
-        aMap.clear
-        bMap.clear
-        next.flush
+        map.clear
+        next.flush // Will flush next twice if both input streams are flushed
       }
     }
     
@@ -243,36 +240,50 @@ class StreamFunctions {
   def zipWith[A, B, C] (f: (A, B) => C, next: StreamOp[C]): (StreamOp[A], StreamOp[B]) = {
     val leftBuffer = new scala.collection.mutable.Queue[A]
     val rightBuffer = new scala.collection.mutable.Queue[B]
+    var leftWaitingForFlush = false
+    var rightWaitingForFlush = false
   
 	val left = new StreamOp[A] {
 	  def onData(data: A) = {
-	    if (rightBuffer.isEmpty) {
-	      leftBuffer += data
-	    } else {
-	      next.onData(f(data, rightBuffer.dequeue))
+	    if (!leftWaitingForFlush) {
+	      if (rightBuffer.isEmpty) {
+	        leftBuffer += data
+	      } else {
+	        next.onData(f(data, rightBuffer.dequeue))
+	      }
 	    }
       }
 	  
 	  def flush = {
 	    leftBuffer.clear
-	    rightBuffer.clear
-	    next.flush
+	    if (leftWaitingForFlush) {
+	      leftWaitingForFlush = false
+   	      next.flush
+	    } else {
+	      rightWaitingForFlush = true
+	    }
 	  }
 	}
   
 	val right = new StreamOp[B] {
 	  def onData(data: B) = {
-	    if (leftBuffer.isEmpty) {
-	      rightBuffer += data
-	    } else {
-	      next.onData(f(leftBuffer.dequeue, data))
+	    if (!rightWaitingForFlush) {
+  	      if (leftBuffer.isEmpty) {
+	        rightBuffer += data
+	      } else {
+	        next.onData(f(leftBuffer.dequeue, data))
+	      }
 	    }
       }
 
 	  def flush = {
-	    leftBuffer.clear
 	    rightBuffer.clear
-	    next.flush
+	    if (rightWaitingForFlush) {
+	      rightWaitingForFlush = false
+  	      next.flush
+	    } else {
+	      leftWaitingForFlush = true
+	    }
 	  }
     } 
 	  
@@ -417,11 +428,15 @@ object Streams {
     new ListInput(list, new FlatMapOp[Int, Int]((x => x :: x :: Nil), op7))
     op7.verify()
     
-    val op8 = new AssertEqualsOp(list.scanLeft(0)(_ + _) drop 1, "ReduceOp")
+    val op8 = new AssertEqualsOp(3 :: 6 :: 10 :: Nil, "ReduceOp")
     new ListInput(list, new ReduceOp[Int](((x, y) => x + y), op8))
     op8.verify()
     
-    val op9 = new AssertEqualsOp(list.scanLeft(0)(_ + _), "FoldOp")
+    val op28 = new AssertEqualsOp(-3 :: 0 :: -4 :: Nil, "ReduceOp Minus")
+    new ListInput(list, new ReduceOp[Int](((x, y) => -x - y), op28))
+    op28.verify()
+
+    val op9 = new AssertEqualsOp(1 :: 3 :: 6 :: 10 :: Nil, "FoldOp")
     new ListInput(list, new FoldOp[Int, Int](((x, y) => x + y), 0, op9))
     op9.verify()
 
@@ -515,7 +530,7 @@ object Streams {
       if (!isFlushed) println("Not flushed: " + FlushTest.ctr) 
     }
     
-    new FlushTest(s => new MapOp[Int, Int](x => x, s), Some(1))
+    new FlushTest(s => new MapOp[Int, Int](x => x, s), Some(1)) // Nr. 1
     new FlushTest(s => new FilterOp[Int](x => x > 2, s))
     new FlushTest(s => new ReduceOp[Int]((x, y) => x + y, s), Some(1))
     new FlushTest(s => new FoldOp[Int, Int]((x, y) => 0, 0, s), Some(0))
@@ -524,11 +539,9 @@ object Streams {
     new FlushTest(s => new DropWhileOp[Int](x => x < 1, s), Some(1))
     new FlushTest(s => new TakeOp[Int](1, s), Some(1))
     new FlushTest(s => new TakeWhileOp[Int](x => x > 1, s))
-    new FlushTest(s => new PrependOp[Int](1 :: Nil, s), Some(1))
+    new FlushTest(s => new PrependOp[Int](1 :: Nil, s), Some(1)) // Nr. 10
     new FlushTest(s => new OffsetOp[Int](1, s))
     new FlushTest(s => new GroupByOp[Int, Int](x => x, x => s), Some(1))
-    new FlushTest(s => new StreamFunctions().zipWith[Int, Int, Int](_ + _, s)._1)
-    new FlushTest(s => new StreamFunctions().zipWith[Int, Int, Int](_ + _, s)._2)
 
     class GenericFlushTest[A, B](create: StreamOp[A] => StreamOp[B], onDataCalledWith: Option[A] = None) {
       FlushTest.ctr += 1
@@ -550,6 +563,67 @@ object Streams {
     new GenericFlushTest[Map[Int, List[Int]], Int](s => new GroupByStreamOp[Int, Int](x => x, s))
     new GenericFlushTest[List[(Int, Int)], Int](s => new StreamFunctions().equiJoin[Int, Int, Int](x => x, x => x, s)._1)
     new GenericFlushTest[List[(Int, Int)], Int](s => new StreamFunctions().equiJoin[Int, Int, Int](x => x, x => x, s)._2)
+    
+    // Test ordering of effects of flushing
+    
+    val op26 = new AssertEqualsOp(5 :: 8 :: 14 :: 24 :: 5 :: 8 :: 14 :: 24 :: Nil, "chained FoldOp")
+    val op27 = new FoldOp[Int, Int](((x, y) => x + y), 0, new FoldOp[Int, Int](((x, y) => x + y), 4, op26))
+    new ListInput(list, op27)
+    op27.flush
+    new ListInput(list, op27)
+    op26.verify()
+    
+    val zipWithFlushTest = new StreamOp[(Int, Int)] {
+      var state = 0
+	  val buffer = new scala.collection.mutable.Queue[Int]
+	  
+	  def onData(data: (Int, Int)) = {
+        state match {
+          case 0 => verifyEquals(state, data, (1, 2))
+          case 1 => verifyEquals(state, data, (2, 3))
+          case 2 => verifyEquals(state, data, (3, 4))
+          case 3 => verifyEquals(state, data, (4, 5))
+          case 4 => println("zipWithTest failed in state " + state + " because flush was expected, but data " + data + " was received")
+          case 5 => verifyEquals(state, data, (5, 7))
+          case 6 => println("zipWithTest failed in state " + state + " because flush was expected, but data " + data + " was received")
+          case 7 => verifyEquals(state, data, (7, 9))
+          case _ => println("zipWithTest failed in unknown state: " + state)
+        }
+        state += 1
+	  }
+      
+      def verifyEquals(state: Int, expected: (Int, Int), actual: (Int, Int)) = expected match {
+        case `actual` =>
+        case _ => println("zipWithTest failed in state " + state + ". Expected: " + expected + ", actual: " + actual)
+      }
+	  
+      def verifyEnd = if(state != 8) println("zipWithTest finished in state " + state + " instead of " + 10)
+	  
+	  override def flush() = {
+        state match {
+          case 4 =>
+          case 6 =>
+          case _ => println("zipWithTest failed in state " + state + " because flush was called, but data was expected")
+        }
+        state += 1
+	  }
+    }
+
+    val (a6, b6) = new StreamFunctions().zipWith[Int, Int, (Int, Int)]((_, _), zipWithFlushTest)
+    new ListInput(list, a6)
+    new ListInput(list map (_ + 1), b6)
+    a6.flush
+    b6.onData(6)
+    b6.flush
+    b6.onData(7)
+    b6.onData(8)
+    a6.onData(5)
+    b6.flush
+    a6.onData(6)
+    a6.flush
+    a6.onData(7)
+    b6.onData(9)
+    zipWithFlushTest.verifyEnd
     
     println("END OF TESTS")
   }
