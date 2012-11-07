@@ -208,6 +208,15 @@ class GroupByStreamOp[A, B](keyFun: A => B, next: StreamOp[Map[B, List[A]]]) ext
   }
 }
 
+class AggregatorOp[A](next: StreamOp[List[A]]) extends StreamOp[A] {
+  var list: List[A] = Nil 
+  def onData(data: A) = {
+    list = data :: list
+    next.onData(list)
+  }
+  def flush = next.flush
+}
+
 class StreamFunctions {
   
   // Changed output to List[(A, B)], free GroupBy, can always flatten after
