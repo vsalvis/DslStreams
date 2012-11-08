@@ -7,9 +7,6 @@ object DBToaster {
     val printIntermediate = false
 
     // DBToaster, update on new data, no need to store old data
-    // 111:  538 174 138 55 36 36 39 35 32 33
-    // 114:  543 157 173 66 31 29 31 42 34 35
-    // 118:  562 172 137 68 32 36 30 38 55 53 
     val timing1 = new Array[Long](10)
     for (i <- 0 to 9) {
 	    val start = System.currentTimeMillis
@@ -23,11 +20,8 @@ object DBToaster {
 	    println("--------" + timing1(i) + "------------")
 	    input.flush
     }
-    
+
     // Naive, aggregate all and recompute on new data
-    // 1140:  1281 1138 1223 1100 1082 1110 1088 1095 1153 1138
-    // 1237:  1285 1172 1389 1409 1148 1293 1117 1245 1224 1097
-    // 1449:  1301 1120 1211 1116 1102 1220 3405 1634 1096 1285
     val timing2 = new Array[Long](10)
     for (i <- 0 to 9) {
 	    val start2 = System.currentTimeMillis
@@ -48,7 +42,77 @@ object DBToaster {
     println
     print((timing2 reduce ((x, y) => x + y)) / 10 + ":  ")
     timing2.toList foreach (x => print(x + " "))
-/*
+
+    // Timing:
+    // Tiny:
+    // Update: 
+    // 58:  208 136 47 32 72 20 17 25 18 14
+    // 60:  199 137 39 38 85 25 22 21 15 19 
+    // 85:  231 243 72 47 112 34 33 28 25 31 
+    // Recompute:
+    // 58:  167 44 58 42 40 28 33 53 56 59
+    // 65:  239 48 57 46 36 28 37 49 59 58 
+    // 66:  223 48 61 51 35 27 36 58 61 65 
+
+    // Standard:
+    // Update: 
+    // 111:  538 174 138 55 36 36 39 35 32 33
+    // 114:  543 157 173 66 31 29 31 42 34 35
+    // 118:  562 172 137 68 32 36 30 38 55 53
+    // Recompute:
+    // 1140:  1281 1138 1223 1100 1082 1110 1088 1095 1153 1138
+    // 1237:  1285 1172 1389 1409 1148 1293 1117 1245 1224 1097
+    // 1449:  1301 1120 1211 1116 1102 1220 3405 1634 1096 1285
+
+    // Big:
+    // Update: 
+    // 
+    // 
+    // 
+    // Recompute:
+    // 
+    // 
+    // 
+    
+    // Use MapOp and ReduceOp instead of combined LineItemListToResultOp
+    val timing1b = new Array[Long](10)
+    for (i <- 0 to 9) {
+	    val start = System.currentTimeMillis
+	    val input = new LineItemInput(
+	        new FilterOp(x => x.shipdate <= new Date(1997, 9, 1), 
+	          new GroupByOp(x => (x.returnflag, x.linestatus), (x: Pair[Char, Char]) => 
+	            new MapOp[LineItem, Result]((data: LineItem) => new Result(data.returnflag, data.linestatus, 
+		            data.quantity, data.extendedprice, data.extendedprice * (1 - data.discount),
+				    data.extendedprice * (1 - data.discount) * (1 + data.tax), data.quantity,
+				    data.extendedprice, data.discount, 1),
+				  new ReduceOp[Result]((old, data) => (new Result(old.returnflag, old.linestatus, old.sum_qty + data.sum_qty,
+			          old.sum_base_price + data.sum_base_price, old.sum_disc_price + data.sum_disc_price,
+			          old.sum_charge + data.sum_charge,
+			          (old.avg_qty * old.count_order + data.avg_qty) / (old.count_order + 1),
+			          (old.avg_price * old.count_order + data.avg_price) / (old.count_order + 1),
+			          (old.avg_disc * old.count_order + data.avg_disc) / (old.count_order + 1),
+			          old.count_order + 1)), 
+				    new ResultAggregatorOp(
+	                    new ResultOutput(printIntermediate)))))))
+	    timing1b(i) = System.currentTimeMillis - start
+	    println("--------" + timing1b(i) + "------------")
+	    input.flush
+    }
+    println
+    print((timing1b reduce ((x, y) => x + y)) / 10 + ":  ")
+    timing1b.toList foreach (x => print(x + " "))
+    // Standard Size:
+    // 1 :  129:  658 139 140 127 50 49 39 30 29 33 
+    // 2 :  1099:  1261 1107 1179 1062 1054 1052 1060 1079 1064 1073 
+    // 1b:  35:  60 46 33 28 31 28 31 36 29 29 
+    // Run independently:
+    // 1b:  129:  504 162 184 134 79 67 60 37 37 31
+    //      133:  543 167 159 132 70 81 64 48 41 33
+    // 1 :  117:  488 146 154 106 69 62 49 36 32 35 
+    //      119:  496 152 145 118 63 66 47 38 33 32 
+    // 2 :  1151:  1662 1286 1121 1070 1058 1060 1054 1073 1077 1058 
+    //      1287:  1786 1286 1461 1289 1365 1199 1142 1094 1109 1141 
+    /*
 SELECT returnflag, linestatus, 
   SUM(quantity) AS sum_qty,
   SUM(extendedprice) AS sum_base_price,
@@ -107,11 +171,11 @@ GROUP BY returnflag, linestatus;
   }
 
   class LineItemInput(next: StreamOp[LineItem]) extends StreamInput[LineItem](next) {
-    next.onData(createLineItem("1|156|4|1|17|17954.55|0.04|0.02|N|O|1996-03-13|1996-02-12|1996-03-22|DELIVER IN PERSON|TRUCK|egular courts above the"))
-    next.onData(createLineItem("1|156|4|1|17|17954.55|0.04|0.02|M|O|1998-03-13|1996-02-12|1996-03-22|DELIVER IN PERSON|TRUCK|egular courts above the"))
-    next.onData(createLineItem("1|156|4|1|7777|17954.55|0.04|0.02|N|O|1996-03-13|1996-02-12|1996-03-22|DELIVER IN PERSON|TRUCK|egular courts above the"))
+//    next.onData(createLineItem("1|156|4|1|17|17954.55|0.04|0.02|N|O|1996-03-13|1996-02-12|1996-03-22|DELIVER IN PERSON|TRUCK|egular courts above the"))
+//    next.onData(createLineItem("1|156|4|1|17|17954.55|0.04|0.02|M|O|1998-03-13|1996-02-12|1996-03-22|DELIVER IN PERSON|TRUCK|egular courts above the"))
+//    next.onData(createLineItem("1|156|4|1|7777|17954.55|0.04|0.02|N|O|1996-03-13|1996-02-12|1996-03-22|DELIVER IN PERSON|TRUCK|egular courts above the"))
 
-    Source.fromFile("data/lineitem.csv").getLines foreach (x => next.onData(createLineItem(x))) 
+    Source.fromFile("data/lineitem_standard.csv").getLines foreach (x => next.onData(createLineItem(x))) 
     
     def createLineItem(line: String): LineItem = {
       val values = line.split('|')
@@ -166,10 +230,11 @@ GROUP BY returnflag, linestatus;
         data.map(x => x.extendedprice * (1 - x.discount) * (1 + x.tax)).reduce((x, y) => x + y),
         data.map(_.quantity).reduce((x, y) => x + y) / data.size,
         data.map(_.extendedprice).reduce((x, y) => x + y) / data.size,
-        data.map(_.extendedprice).reduce((x, y) => x + y) / data.size,
+        data.map(_.discount).reduce((x, y) => x + y) / data.size,
         data.size))
     def flush = next.flush
   }
+  
   
   class ResultAggregatorOp(next: StreamOp[Result]) extends StreamOp[Result] {
     var last: Option[Result] = None
