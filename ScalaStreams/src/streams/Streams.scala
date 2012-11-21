@@ -27,6 +27,11 @@ class StreamSynchronizer[A] {
   }
 }
 
+class IdentityOp[A](next: StreamOp[A]) extends StreamOp[A] {
+  def onData(data: A) = next.onData(data)
+  def flush = next.flush
+}
+
 class MapOp[A, B](f: A => B, next: StreamOp[B]) extends StreamOp[A] {
   def onData(data: A) = next.onData(f(data))
   
@@ -208,6 +213,18 @@ class GroupByStreamOp[A, B](keyFun: A => B, next: StreamOp[Map[B, List[A]]]) ext
   }
 }
 
+class DuplicateOp[A](next1: StreamOp[A], next2: StreamOp[A]) extends StreamOp[A] {
+  def onData(data: A) = {
+    next1.onData(data)
+    next2.onData(data)
+  }
+  
+  def flush = {
+    next1.flush
+    next2.flush
+  }
+}
+
 class AggregatorOp[A](next: StreamOp[List[A]]) extends StreamOp[A] {
   var list: List[A] = Nil 
   def onData(data: A) = {
@@ -215,6 +232,23 @@ class AggregatorOp[A](next: StreamOp[List[A]]) extends StreamOp[A] {
     next.onData(list)
   }
   def flush = next.flush
+}
+
+class SplitOp[A, B, C, D, E, F](split: A => (B, C), first: StreamOp[D] => StreamOp[B],
+    second: StreamOp[E] => StreamOp[C], merge: (D, E) => F, next: StreamOp[F]) extends StreamOp[A] {
+  val (firstZip, secondZip) = new StreamFunctions().zipWith(merge, next)
+  val (firstStream, secondStream) = (first(firstZip), second(secondZip))
+    
+  def onData(data: A) = {
+    val (b, c) = split(data)
+    firstStream.onData(b)
+    secondStream.onData(c)
+  }
+  
+  def flush = {
+    firstStream.flush
+    secondStream.flush
+  }
 }
 
 class StreamFunctions {
@@ -496,6 +530,16 @@ object Streams {
         :: Map(1 -> (1 :: 1 :: Nil), 0 -> (0 :: Nil)) :: Nil, "GroupByStreamOp")
     new ListInput(1 :: 0 :: 1 :: Nil, new GroupByStreamOp[Int, Int](x => x, op23))
     op23.verify()
+
+    val op23b = new AssertEqualsOp(list, "DuplicateOp 1")
+    val op23c = new AssertEqualsOp(list, "DuplicateOp 2")
+    new ListInput(list, new DuplicateOp[Int](op23b, op23c))
+    op23b.verify()
+    op23c.verify()
+
+    val op23d = new AssertEqualsOp(list map { -_}, "SplitOp")
+    new ListInput(list, new SplitOp[Int, Int, Int, Int, Int, Int]((x) => (x, x), (x) => new MapOp(x => x, x), (x) => new MapOp(-2 * _, x), (x, y) => x + y, op23d))
+    op23d.verify()
 
     val op24 = new AssertEqualsOp[List[(Int, Int)]](((2, 2) :: Nil) :: ((1,1) :: Nil) :: ((3,3) :: Nil) :: ((4,4) :: Nil) :: ((1,1) :: (1,1) :: Nil) :: Nil, "equiJoin")
     val (a3, b3) = new StreamFunctions().equiJoin[Int, Int, Int](x => x, x => x, op24)
