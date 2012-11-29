@@ -69,3 +69,12 @@ class FIRFilterOpSplit(coefficients: List[Double], next: StreamOp[Double]) exten
   
   def flush = stream.flush
 }
+
+// API
+// LMS
+// buffer
+// parallel
+// signal processing: lowpass etc.
+// streamit cookbook examples
+// buffers
+// parallel
