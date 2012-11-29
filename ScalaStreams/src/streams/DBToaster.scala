@@ -5,30 +5,33 @@ import scala.io.Source
 object DBToaster {
   def main(args: Array[String]) {
     val printIntermediate = false
+    val filename = "lineitem_tiny.csv"
+    val numTrials = 1
 
     // DBToaster, update on new data, no need to store old data
-    val timing1 = new Array[Long](10)
-    for (i <- 0 to 9) {
+    val timing1 = new Array[Long](numTrials)
+    for (i <- 0 to numTrials - 1) {
 	    val start = System.currentTimeMillis
-	    toastUpdateOnNew(printIntermediate)
+	    toastUpdateOnNew(printIntermediate, filename)
 	    timing1(i) = System.currentTimeMillis - start
 	    println("--------" + timing1(i) + "------------")
     }
 
     // Naive, aggregate all and recompute on new data
-    val timing2 = new Array[Long](10)
-    for (i <- 0 to 9) {
+    val timing2 = new Array[Long](numTrials)
+    for (i <- 0 to numTrials - 1) {
 	    val start2 = System.currentTimeMillis
-	    toastAggregateAndRecompute(printIntermediate)
+	    toastAggregateAndRecompute(printIntermediate, filename)
 	    timing2(i) = System.currentTimeMillis - start2
 	    println("--------" + timing2(i) + "------------")
     }
     
-    print((timing1 reduce ((x, y) => x + y)) / 10 + ":  ")
+    print((timing1 reduce ((x, y) => x + y)) / numTrials + ":  ")
     timing1.toList foreach (x => print(x + " "))
     println
-    print((timing2 reduce ((x, y) => x + y)) / 10 + ":  ")
+    print((timing2 reduce ((x, y) => x + y)) / numTrials + ":  ")
     timing2.toList foreach (x => print(x + " "))
+    println
 
     // Timing:
     // Tiny:
@@ -62,16 +65,31 @@ object DBToaster {
     // 
     
     // Use MapOp and ReduceOp instead of combined LineItemListToResultOp
-    val timing1b = new Array[Long](10)
-    for (i <- 0 to 9) {
+    val timing1b = new Array[Long](numTrials)
+    for (i <- 0 to numTrials - 1) {
 	    val start = System.currentTimeMillis
-	    toastUpdateMapReduce(printIntermediate)
+	    toastUpdateMapReduce(printIntermediate, filename)
 	    timing1b(i) = System.currentTimeMillis - start
 	    println("--------" + timing1b(i) + "------------")
     }
     println
-    print((timing1b reduce ((x, y) => x + y)) / 10 + ":  ")
+    print((timing1b reduce ((x, y) => x + y)) / numTrials + ":  ")
     timing1b.toList foreach (x => print(x + " "))
+    println
+    
+    // Use SplitOp instead of combined LineItemListToResultOp
+    val timing1c = new Array[Long](numTrials)
+    for (i <- 0 to numTrials - 1) {
+	    val start = System.currentTimeMillis
+	    toastUpdateSplit(printIntermediate, filename)
+	    timing1c(i) = System.currentTimeMillis - start
+	    println("--------" + timing1c(i) + "------------")
+    }
+    println
+    print((timing1c reduce ((x, y) => x + y)) / numTrials + ":  ")
+    timing1c.toList foreach (x => print(x + " "))
+    println
+
     // Standard Size:
     // 1 :  129:  658 139 140 127 50 49 39 30 29 33 
     // 2 :  1099:  1261 1107 1179 1062 1054 1052 1060 1079 1064 1073 
@@ -121,8 +139,8 @@ GROUP BY returnflag, linestatus;
  */
   }
   
-  def toastUpdateOnNew(printIntermediate: Boolean) {
-    val input = new LineItemInput(
+  def toastUpdateOnNew(printIntermediate: Boolean, filename: String) {
+    val input = new LineItemInput(filename, 
 	        new FilterOp(x => x.shipdate <= new Date(1997, 9, 1), 
 	            new GroupByOp(x => (x.returnflag, x.linestatus), (x: Pair[Char, Char]) => 
 	              new LineItemToResultOp(
@@ -131,8 +149,8 @@ GROUP BY returnflag, linestatus;
     input.flush
   }
   
-  def toastUpdateMapReduce(printIntermediate: Boolean) {
-    val input = new LineItemInput(
+  def toastUpdateMapReduce(printIntermediate: Boolean, filename: String) {
+    val input = new LineItemInput(filename, 
 	        new FilterOp(x => x.shipdate <= new Date(1997, 9, 1), 
 	          new GroupByOp(x => (x.returnflag, x.linestatus), (x: Pair[Char, Char]) => 
 	            new MapOp[LineItem, Result]((data: LineItem) => new Result(data.returnflag, data.linestatus, 
@@ -146,53 +164,71 @@ GROUP BY returnflag, linestatus;
 			          (old.avg_price * old.count_order + data.avg_price) / (old.count_order + 1),
 			          (old.avg_disc * old.count_order + data.avg_disc) / (old.count_order + 1),
 			          old.count_order + 1)), 
-				    new ResultAggregatorOp(
-	                    new ResultOutput(printIntermediate)))))))
+	                new ResultOutput(printIntermediate))))))
     input.flush
   }
   
-  def toastAggregateAndRecompute(printIntermediate: Boolean) {
-    val input2 = new LineItemInput(
+  def toastAggregateAndRecompute(printIntermediate: Boolean, filename: String) {
+    val input2 = new LineItemInput(filename, 
         new FilterOp(x => x.shipdate <= new Date(1997, 9, 1), 
             new GroupByOp(x => (x.returnflag, x.linestatus), (x: Pair[Char, Char]) =>
               new AggregatorOp(
                   new LineItemListToResultOp(
-                    new ResultAggregatorOp(
-                      new ResultOutput(printIntermediate)))))))
+                      new ResultOutput(printIntermediate))))))
     input2.flush
   }
 
+  class SumOp(next: StreamOp[Double]) extends StreamOp[Double] {
+    var sum = 0.0
+    def onData(data: Double) = {
+      sum += data
+      next.onData(sum)
+    }
+    def flush = {
+      sum = 0
+      next.flush
+    }
+  }
   
-  def toastUpdateSplit(printIntermediate: Boolean) {
-//    val input = new LineItemInput(
-//	        new FilterOp(x => x.shipdate <= new Date(1997, 9, 1), 
-//	          new GroupByOp(x => (x.returnflag, x.linestatus), (key: Pair[Char, Char]) => 
-//	            new SplitOp((x: LineItem) => (x.returnflag, x), (x: StreamOp[Char]) => new IdentityOp(x), 
-//	                (x: StreamOp[Tuple[Char, Double, Double, Double, Double, Double, Double, Double, Int]]) => null,
-//	                (x: )
-//	                new MapOp()))
-
-	        
-//	            new MapOp[LineItem, Result]((data: LineItem) => new Result(data.returnflag, data.linestatus, 
-//		            data.quantity, data.extendedprice, data.extendedprice * (1 - data.discount),
-//				    data.extendedprice * (1 - data.discount) * (1 + data.tax), data.quantity,
-//				    data.extendedprice, data.discount, 1),
-//				  new ReduceOp[Result]((old, data) => (new Result(old.returnflag, old.linestatus, old.sum_qty + data.sum_qty,
-//			          old.sum_base_price + data.sum_base_price, old.sum_disc_price + data.sum_disc_price,
-//			          old.sum_charge + data.sum_charge,
-//			          (old.avg_qty * old.count_order + data.avg_qty) / (old.count_order + 1),
-//			          (old.avg_price * old.count_order + data.avg_price) / (old.count_order + 1),
-//			          (old.avg_disc * old.count_order + data.avg_disc) / (old.count_order + 1),
-//			          old.count_order + 1)), 
-//				    new ResultAggregatorOp(
-//	                    new ResultOutput(printIntermediate)))))))
-	                    
-/*
- * val returnflag: Char, val linestatus: Char, val sum_qty: Double, val sum_base_price: Double,
-      val sum_disc_price: Double, val sum_charge: Double, val avg_qty: Double, val avg_price: Double,
-      val avg_disc: Double, val count_order: Int	                    
- */
-//    input.flush
+  class AvgOp(next: StreamOp[Double]) extends StreamOp[Double] {
+    var sum = 0.0
+    var count = 0
+    def onData(data: Double) = {
+      sum += data
+      count += 1
+      next.onData(sum / count)
+    }
+    def flush = {
+      sum = 0
+      count = 0
+      next.flush
+    }
+  }
+  
+  def toastUpdateSplit(printIntermediate: Boolean, filename: String) {
+    val input = new LineItemInput(filename, 
+	        new FilterOp(x => x.shipdate <= new Date(1997, 9, 1), 
+	          new GroupByOp(x => (x.returnflag, x.linestatus), (key: Pair[Char, Char]) => 
+	            new SplitOp((x: LineItem) => ((x.returnflag, x.linestatus), x), (x: StreamOp[Pair[Char, Char]]) => new IdentityOp(x), 
+	                (zipList: StreamOp[List[Double]]) => new MultiSplitOp[LineItem, Double](8, 
+	                    (data: LineItem, i: Int) => i match {
+	                      case 0 => data.quantity
+	                      case 1 => data.extendedprice
+	                      case 2 => data.extendedprice * (1 - data.discount)
+	                      case 3 => data.extendedprice * (1 - data.discount) * (1 + data.tax)
+	                      case 4 => data.quantity
+	                      case 5 => data.extendedprice
+	                      case 6 => data.discount
+	                      case 7 => 1
+	                    },
+	                    (zipped: StreamOp[Double], i: Int) => i match {
+	                      case 0 | 1 | 2 | 3 | 7=> new SumOp(zipped)
+	                      case 4 | 5 | 6 => new AvgOp(zipped)
+	                    }, zipList),
+	                (x: Pair[Char, Char], y: List[Double]) => new Result(x._1, x._2, y(0), y(1), y(2), y(3), y(4), y(5), y(6), y(7).toInt),
+	                new ResultOutput(printIntermediate)))))
+    
+    input.flush
   }
   
   class LineItem(val orderkey: Int, val partkey: Int, val suppkey: Int, val linenumber: Int,
@@ -214,12 +250,12 @@ GROUP BY returnflag, linestatus;
         + avg_disc + ", " + count_order)
   }
 
-  class LineItemInput(next: StreamOp[LineItem]) extends StreamInput[LineItem](next) {
+  class LineItemInput(filename: String, next: StreamOp[LineItem]) extends StreamInput[LineItem](next) {
 //    next.onData(createLineItem("1|156|4|1|17|17954.55|0.04|0.02|N|O|1996-03-13|1996-02-12|1996-03-22|DELIVER IN PERSON|TRUCK|egular courts above the"))
 //    next.onData(createLineItem("1|156|4|1|17|17954.55|0.04|0.02|M|O|1998-03-13|1996-02-12|1996-03-22|DELIVER IN PERSON|TRUCK|egular courts above the"))
 //    next.onData(createLineItem("1|156|4|1|7777|17954.55|0.04|0.02|N|O|1996-03-13|1996-02-12|1996-03-22|DELIVER IN PERSON|TRUCK|egular courts above the"))
 
-    Source.fromFile("data/lineitem_tiny.csv").getLines foreach (x => next.onData(createLineItem(x))) 
+    Source.fromFile("data/" + filename).getLines foreach (x => next.onData(createLineItem(x))) 
     
     def createLineItem(line: String): LineItem = {
       val values = line.split('|')

@@ -251,6 +251,15 @@ class SplitOp[A, B, C, D, E, F](split: A => (B, C), first: StreamOp[D] => Stream
   }
 }
 
+class MultiSplitOp[A, B](num: Int, split: (A, Int) => B, streams: (StreamOp[B], Int) => StreamOp[B], next: StreamOp[List[B]]) extends StreamOp[A] {
+  val zippedStreams = new StreamFunctions().multiZipWith(num, next).zipWithIndex.map(x => streams(x._1, x._2))
+
+  def onData(data: A) = {
+    zippedStreams.zipWithIndex.foreach(x => x._1 onData split(data, x._2))
+  }
+  def flush = { zippedStreams.foreach(_.flush) }
+}
+
 class StreamFunctions {
   
   // Changed output to List[(A, B)], free GroupBy, can always flatten after
@@ -278,6 +287,19 @@ class StreamFunctions {
     }
     
     (new JoinOp(aMap, keyFunA), new JoinOp(bMap, keyFunB))
+  }
+  
+  def multiZipWith[A] (num: Int, next: StreamOp[List[A]]): List[StreamOp[A]] = num match {
+    case x if x <= 0 => Nil
+    case 1 => new MapOp((x: A) => x :: Nil, next) :: Nil
+    case 2 => {
+      val (a, b) = zipWith[A, A, List[A]](_ :: _ :: Nil, next)
+      a :: b :: Nil
+    }
+    case x => {
+      val (a, b) = zipWith[List[A], List[A], List[A]](_ ::: _, next)
+      multiZipWith(x / 2 + x % 2, a) ::: multiZipWith(x / 2, b)
+    }
   }
   
   def zipWith[A, B, C] (f: (A, B) => C, next: StreamOp[C]): (StreamOp[A], StreamOp[B]) = {
@@ -540,6 +562,10 @@ object Streams {
     val op23d = new AssertEqualsOp(list map { -_}, "SplitOp")
     new ListInput(list, new SplitOp[Int, Int, Int, Int, Int, Int]((x) => (x, x), (x) => new MapOp(x => x, x), (x) => new MapOp(-2 * _, x), (x, y) => x + y, op23d))
     op23d.verify()
+ 
+    val op23e = new AssertEqualsOp((0::0::0::0::0::Nil) :: (0::1::2::3::4::Nil) :: (0::2::4::6::8::Nil) ::  Nil, "MultiSplitOp")
+    new ListInput(0 :: 1 :: 2 :: Nil, new MultiSplitOp[Int, Int](5, (data, index) => data, (next, index) => new MapOp(x => x * index, next), op23e))
+    op23e.verify()
 
     val op24 = new AssertEqualsOp[List[(Int, Int)]](((2, 2) :: Nil) :: ((1,1) :: Nil) :: ((3,3) :: Nil) :: ((4,4) :: Nil) :: ((1,1) :: (1,1) :: Nil) :: Nil, "equiJoin")
     val (a3, b3) = new StreamFunctions().equiJoin[Int, Int, Int](x => x, x => x, op24)
