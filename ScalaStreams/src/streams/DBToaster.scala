@@ -139,7 +139,7 @@ GROUP BY returnflag, linestatus;
  */
   }
   
-  def toastUpdateOnNew(printIntermediate: Boolean, filename: String) {
+  def toastUpdateOnNew(printIntermediate: Boolean, filename: String): Int = {
     val input = new LineItemInput(filename, 
 	        new FilterOp(x => x.shipdate <= new Date(1997, 9, 1), 
 	            new GroupByOp(x => (x.returnflag, x.linestatus), (x: Pair[Char, Char]) => 
@@ -147,9 +147,10 @@ GROUP BY returnflag, linestatus;
 	                  new ResultAggregatorOp(
 	                      new ResultOutput(printIntermediate))))))
     input.flush
+    42
   }
   
-  def toastUpdateMapReduce(printIntermediate: Boolean, filename: String) {
+  def toastUpdateMapReduce(printIntermediate: Boolean, filename: String): Int = {
     val input = new LineItemInput(filename, 
 	        new FilterOp(x => x.shipdate <= new Date(1997, 9, 1), 
 	          new GroupByOp(x => (x.returnflag, x.linestatus), (x: Pair[Char, Char]) => 
@@ -166,9 +167,10 @@ GROUP BY returnflag, linestatus;
 			          old.count_order + 1)), 
 	                new ResultOutput(printIntermediate))))))
     input.flush
+    42
   }
   
-  def toastAggregateAndRecompute(printIntermediate: Boolean, filename: String) {
+  def toastAggregateAndRecompute(printIntermediate: Boolean, filename: String): Int = {
     val input2 = new LineItemInput(filename, 
         new FilterOp(x => x.shipdate <= new Date(1997, 9, 1), 
             new GroupByOp(x => (x.returnflag, x.linestatus), (x: Pair[Char, Char]) =>
@@ -176,6 +178,7 @@ GROUP BY returnflag, linestatus;
                   new LineItemListToResultOp(
                       new ResultOutput(printIntermediate))))))
     input2.flush
+    42
   }
 
   class SumOp(next: StreamOp[Double]) extends StreamOp[Double] {
@@ -205,7 +208,7 @@ GROUP BY returnflag, linestatus;
     }
   }
   
-  def toastUpdateSplit(printIntermediate: Boolean, filename: String) {
+  def toastUpdateSplit(printIntermediate: Boolean, filename: String): Int = {
     val input = new LineItemInput(filename, 
 	        new FilterOp(x => x.shipdate <= new Date(1997, 9, 1), 
 	          new GroupByOp(x => (x.returnflag, x.linestatus), (key: Pair[Char, Char]) => 
@@ -229,6 +232,7 @@ GROUP BY returnflag, linestatus;
 	                new ResultOutput(printIntermediate)))))
     
     input.flush
+    42
   }
   
   class LineItem(val orderkey: Int, val partkey: Int, val suppkey: Int, val linenumber: Int,

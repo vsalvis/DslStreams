@@ -3,12 +3,13 @@ package streams
 
 object Applications {
   def main(args: Array[String]) {
-    new DBToaster.LineItemInput(
+    val filename = "lineitem_tiny.csv"
+    new DBToaster.LineItemInput(filename,
         new MapOp[DBToaster.LineItem, Double](_.quantity,
             new FIRFilterOp(1.0 :: 2.0 :: 3.0 :: Nil, new PrintlnOp)
         ))
     println("----------")
-    new DBToaster.LineItemInput(
+    new DBToaster.LineItemInput(filename,
         new MapOp[DBToaster.LineItem, Double](_.quantity,
             new FIRFilterOpPrepend(1.0 :: 2.0 :: 3.0 :: Nil, new PrintlnOp)
         ))
