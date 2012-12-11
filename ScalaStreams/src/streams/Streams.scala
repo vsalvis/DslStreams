@@ -704,7 +704,24 @@ object Streams {
     b6.onData(9)
     zipWithFlushTest.verifyEnd
     
-    println("END OF TESTS")
+    println("API TESTS")
+    
+    new ListInput(1 :: 2 :: 3 :: Nil, Stream[Int] map {_ + 1} filter {_ > 2} print)
+    println
+    new ListInput(1 :: 2 :: 3 :: Nil, Stream[Int] drop 1 aggregate() print)
+    println
+    new ListInput(1 :: 2 :: 3 :: Nil, Stream[Int] dropWhile {_ < 2} flatMap {_ :: 0 :: Nil} print)
+    println
+    new ListInput(1 :: 2 :: 3 :: Nil, Stream[Int] fold({(x: Int, y: Int) => x + y}, 4) print)
+    println
+    new ListInput(1 :: 2 :: 3 :: 4 :: 5 :: Nil, Stream[Int] groupByStream {_ % 3} print)
+    println
+    new ListInput(1 :: 2 :: 3 :: 4 :: 5 :: Nil, Stream[Int] offset 2 prepend (-1 :: 0 :: Nil) reduce {(x: Int, y: Int) => x + y} print)
+    println
+    new ListInput(1 :: 2 :: 3 :: 4 :: 5 :: Nil, Stream[Int] take 4 takeWhile {_ < 4} print)
+    println
+    
+    println("\nEND OF TESTS")
   }
   
 }
