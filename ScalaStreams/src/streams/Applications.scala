@@ -71,6 +71,24 @@ class FIRFilterOpSplit(coefficients: List[Double], next: StreamOp[Double]) exten
   def flush = stream.flush
 }
 
+// Filters inspired by StreamIt examples from http://groups.csail.mit.edu/cag/streamit/papers/streamit-cookbook.pdf
+
+class LowPassFilterOp(rate: Double, cutoff: Double, taps: Int, decimation: Int, next: StreamOp[Double])
+    extends FIRFilterOp(
+        (for (i <- 0 to taps - 1; m = taps - 1; pi = scala.math.Pi) yield {
+        	if (i == m / 2)
+        	  2 * cutoff / rate
+        	else
+        	  scala.math.sin(2*pi*cutoff/rate*(i-m/2)) / pi / (i-m/2) * (0.54 - 0.46 * scala.math.cos(2*pi*i/m))
+        }).toList, next) {}
+
+class BandPassFilterOp(rate: Double, low: Double, high: Double, taps: Int, next: StreamOp[Double])
+    extends SplitOp({toSplit: Double => (toSplit, toSplit)},
+        {mergeOp: StreamOp[Double] => new LowPassFilterOp(rate, low, taps, 0, mergeOp)},
+        {mergeOp: StreamOp[Double] => new LowPassFilterOp(rate, high, taps, 0, mergeOp)},
+        {(first: Double, second: Double) => second - first}, next) {}
+
+
 // API
 // LMS
 // buffer
