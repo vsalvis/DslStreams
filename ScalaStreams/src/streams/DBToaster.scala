@@ -212,7 +212,7 @@ GROUP BY returnflag, linestatus;
     val input = new LineItemInput(filename, 
 	        new FilterOp(x => x.shipdate <= new Date(1997, 9, 1), 
 	          new GroupByOp(x => (x.returnflag, x.linestatus), (key: Pair[Char, Char]) => 
-	            new SplitOp((x: LineItem) => ((x.returnflag, x.linestatus), x), (x: StreamOp[Pair[Char, Char]]) => new IdentityOp(x), 
+	            new SplitMergeOp((out: StreamOp[Pair[Char, Char]]) => new MapOp((x: LineItem) => (x.returnflag, x.linestatus), out), 
 	                (zipList: StreamOp[List[Double]]) => new MultiSplitOp[LineItem, Double](8, 
 	                    (data: LineItem, i: Int) => i match {
 	                      case 0 => data.quantity
@@ -228,8 +228,7 @@ GROUP BY returnflag, linestatus;
 	                      case 0 | 1 | 2 | 3 | 7=> new SumOp(zipped)
 	                      case 4 | 5 | 6 => new AvgOp(zipped)
 	                    }, zipList),
-	                (x: Pair[Char, Char], y: List[Double]) => new Result(x._1, x._2, y(0), y(1), y(2), y(3), y(4), y(5), y(6), y(7).toInt),
-	                new ResultOutput(printIntermediate)))))
+	                new MapOp((x: Pair[Pair[Char, Char], List[Double]]) => new Result(x._1._1, x._1._2, x._2(0), x._2(1), x._2(2), x._2(3), x._2(4), x._2(5), x._2(6), x._2(7).toInt), new ResultOutput(printIntermediate))))))
     
     input.flush
     42

@@ -43,7 +43,7 @@ class FIRFilterOpPrepend(coefficients: List[Double], next: StreamOp[Double]) ext
     case Nil => after
     case x :: Nil => new MapOp((y: Double) => y * x, after)
     case x :: xs => {
-      val (a, b) = new StreamFunctions().zipWith((y: Double, z: Double) => y + z, after)
+      val (a, b) = new StreamFunctions().zipWith(new MapOp((x: Pair[Double, Double]) => x._1 + x._2, after))
       new DuplicateOp(new MapOp((y: Double) => y * x, a), new PrependOp(0.0 :: Nil, split(xs, b)))
     }
   }
@@ -59,11 +59,9 @@ class FIRFilterOpSplit(coefficients: List[Double], next: StreamOp[Double]) exten
   def split(list: List[Double], after: StreamOp[Double]): StreamOp[Double] = list match {
     case Nil => after
     case x :: Nil => new MapOp((y: Double) => y * x, after)
-    case x :: xs => new SplitOp[Double, Double, Double, Double, Double, Double](d => (d, d), 
-          a => new MapOp(y => y * x, a),
+    case x :: xs => new SplitMergeOp[Double, Double, Double](a => new MapOp(y => y * x, a),
           b => new PrependOp(0.0 :: Nil, split(xs, b)),
-          _ + _, 
-          after)
+          new MapOp({x => x._1 + x._2}, after))
   }
   
   def onData(data: Double) = stream.onData(data)
@@ -83,17 +81,14 @@ class LowPassFilterOp(rate: Double, cutoff: Double, taps: Int, decimation: Int, 
         }).toList, next) {}
 
 class BandPassFilterOp(rate: Double, low: Double, high: Double, taps: Int, next: StreamOp[Double])
-    extends SplitOp({toSplit: Double => (toSplit, toSplit)},
-        {mergeOp: StreamOp[Double] => new LowPassFilterOp(rate, low, taps, 0, mergeOp)},
+    extends SplitMergeOp({mergeOp: StreamOp[Double] => new LowPassFilterOp(rate, low, taps, 0, mergeOp)},
         {mergeOp: StreamOp[Double] => new LowPassFilterOp(rate, high, taps, 0, mergeOp)},
-        {(first: Double, second: Double) => second - first}, next) {}
+        new MapOp({(x: Pair[Double, Double]) => x._2 - x._1}, next)) {}
 
 
-// API
+// ok: signal processing: lowpass etc. from streamit cookbook examples
+// ok: API
+// DBToaster query benchmark
 // LMS
 // buffer
-// parallel
-// signal processing: lowpass etc.
-// streamit cookbook examples
-// buffers
 // parallel

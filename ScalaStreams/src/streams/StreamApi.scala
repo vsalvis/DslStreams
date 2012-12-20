@@ -16,13 +16,17 @@ abstract class Stream[A,B] { self =>
   def aggregate() = new Stream[A,List[B]] {
     def into(out: StreamOp[List[B]]) = self.into(new AggregatorOp[B](out))
   }
+  def splitMerge[C,D](first: Stream[B,C], second: Stream[B,D]) = new Stream[A,Pair[C,D]] {
+    def into(out: StreamOp[Pair[C,D]]) = self.into(
+        new SplitMergeOp({x: StreamOp[C] => first into x}, {y: StreamOp[D] => second into y}, out))
+  }
   def drop(n: Int) = new Stream[A,B] {
     def into(out: StreamOp[B]) = self.into(new DropOp(n, out))
   }
   def dropWhile(p: B => Boolean) = new Stream[A,B] {
     def into(out: StreamOp[B]) = self.into(new DropWhileOp(p, out))
   }
-//  def duplicateOp(next1, next2) ???
+//  def equiJoin
   def filter(p: B => Boolean) = new Stream[A,B] {
     def into(out: StreamOp[B]) = self.into(new FilterOp(p, out))
   }
@@ -47,6 +51,7 @@ abstract class Stream[A,B] { self =>
     def into(out: StreamOp[C]) = self.into(new MapOp(f, out))
   }
 //  def multiSplit
+//  def multiZipWith
   def offset(n: Int) = new Stream[A,B] {
     def into(out: StreamOp[B]) = self.into(new OffsetOp(n, out))
   }
@@ -56,11 +61,36 @@ abstract class Stream[A,B] { self =>
   def reduce(f: (B, B) => B) = new Stream[A,B] {
     def into(out: StreamOp[B]) = self.into(new ReduceOp(f, out))
   }
-//  def split
   def take(n: Int) = new Stream[A,B] {
     def into(out: StreamOp[B]) = self.into(new TakeOp(n, out))
   }
   def takeWhile(p: B => Boolean) = new Stream[A,B] {
     def into(out: StreamOp[B]) = self.into(new TakeWhileOp(p, out))
   }
+//  def zipWith
+  
+  // special functions:
+  def duplicate(first: StreamOp[B], second: StreamOp[B]) = {
+    self.into(new DuplicateOp(first, second))
+  }
+  
+
+  
+//class SplitOp[A, B, C, D, E, F](split: A => (B, C), first: StreamOp[D] => StreamOp[B],
+//    second: StreamOp[E] => StreamOp[C], merge: (D, E) => F, next: StreamOp[F]) extends StreamOp[A] {
+//  val (firstZip, secondZip) = new StreamFunctions().zipWith(merge, next)
+//  val (firstStream, secondStream) = (first(firstZip), second(secondZip))
+//    
+//  def onData(data: A) = {
+//    val (b, c) = split(data)
+//    firstStream.onData(b)
+//    secondStream.onData(c)
+//  }
+//  
+//  def flush = {
+//    firstStream.flush
+//    secondStream.flush
+//  }
+//}  
+
 }

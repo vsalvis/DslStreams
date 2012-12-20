@@ -234,15 +234,14 @@ class AggregatorOp[A](next: StreamOp[List[A]]) extends StreamOp[A] {
   def flush = next.flush
 }
 
-class SplitOp[A, B, C, D, E, F](split: A => (B, C), first: StreamOp[D] => StreamOp[B],
-    second: StreamOp[E] => StreamOp[C], merge: (D, E) => F, next: StreamOp[F]) extends StreamOp[A] {
-  val (firstZip, secondZip) = new StreamFunctions().zipWith(merge, next)
+class SplitMergeOp[A, B, C](first: StreamOp[B] => StreamOp[A],
+    second: StreamOp[C] => StreamOp[A], next: StreamOp[Pair[B, C]]) extends StreamOp[A] {
+  val (firstZip, secondZip) = new StreamFunctions().zipWith(next)
   val (firstStream, secondStream) = (first(firstZip), second(secondZip))
     
   def onData(data: A) = {
-    val (b, c) = split(data)
-    firstStream.onData(b)
-    secondStream.onData(c)
+    firstStream.onData(data)
+    secondStream.onData(data)
   }
   
   def flush = {
@@ -250,6 +249,7 @@ class SplitOp[A, B, C, D, E, F](split: A => (B, C), first: StreamOp[D] => Stream
     secondStream.flush
   }
 }
+
 
 class MultiSplitOp[A, B](num: Int, split: (A, Int) => B, streams: (StreamOp[B], Int) => StreamOp[B], next: StreamOp[List[B]]) extends StreamOp[A] {
   val zippedStreams = new StreamFunctions().multiZipWith(num, next).zipWithIndex.map(x => streams(x._1, x._2))
@@ -293,16 +293,16 @@ class StreamFunctions {
     case x if x <= 0 => Nil
     case 1 => new MapOp((x: A) => x :: Nil, next) :: Nil
     case 2 => {
-      val (a, b) = zipWith[A, A, List[A]](_ :: _ :: Nil, next)
+      val (a, b) = zipWith[A, A](new MapOp({x => x._1 :: x._2 :: Nil}, next))
       a :: b :: Nil
     }
     case x => {
-      val (a, b) = zipWith[List[A], List[A], List[A]](_ ::: _, next)
+      val (a, b) = zipWith[List[A], List[A]](new MapOp({x => x._1 ::: x._2}, next))
       multiZipWith(x / 2 + x % 2, a) ::: multiZipWith(x / 2, b)
     }
   }
   
-  def zipWith[A, B, C] (f: (A, B) => C, next: StreamOp[C]): (StreamOp[A], StreamOp[B]) = {
+  def zipWith[A, B] (next: StreamOp[Pair[A, B]]): (StreamOp[A], StreamOp[B]) = {
     val leftBuffer = new scala.collection.mutable.Queue[A]
     val rightBuffer = new scala.collection.mutable.Queue[B]
     var leftWaitingForFlush = false
@@ -314,7 +314,7 @@ class StreamFunctions {
 	      if (rightBuffer.isEmpty) {
 	        leftBuffer += data
 	      } else {
-	        next.onData(f(data, rightBuffer.dequeue))
+	        next.onData(data, rightBuffer.dequeue)
 	      }
 	    }
       }
@@ -336,7 +336,7 @@ class StreamFunctions {
   	      if (leftBuffer.isEmpty) {
 	        rightBuffer += data
 	      } else {
-	        next.onData(f(leftBuffer.dequeue, data))
+	        next.onData(leftBuffer.dequeue, data)
 	      }
 	    }
       }
@@ -478,13 +478,13 @@ object Streams {
     op4.verify()
     
     val op5 = new AssertEqualsOp(list zip (list map (_ + 1)), "zipWith")
-    val (a1, b1) = new StreamFunctions().zipWith[Int, Int, (Int, Int)]((_, _), op5)
+    val (a1, b1) = new StreamFunctions().zipWith[Int, Int](op5)
     new ListInput(list, a1)
     new ListInput(list map (_ + 1), b1)
     op5.verify()
 
     val op6 = new AssertEqualsOp((list, (list map (_ + 1))).zipped map (_ + _), "zipWith map")
-    val (a2, b2) = new StreamFunctions().zipWith[Int, Int, Int]((_ + _), op6)
+    val (a2, b2) = new StreamFunctions().zipWith[Int, Int](new MapOp({x => x._1 + x._2}, op6))
     new ListInput(list, a2)
     new ListInput(list map (_ + 1), b2)
     op6.verify()
@@ -560,7 +560,7 @@ object Streams {
     op23c.verify()
 
     val op23d = new AssertEqualsOp(list map { -_}, "SplitOp")
-    new ListInput(list, new SplitOp[Int, Int, Int, Int, Int, Int]((x) => (x, x), (x) => new MapOp(x => x, x), (x) => new MapOp(-2 * _, x), (x, y) => x + y, op23d))
+    new ListInput(list, new SplitMergeOp[Int, Int, Int]((x) => new MapOp(x => x, x), (x) => new MapOp(-2 * _, x), new MapOp((x) => x._1 + x._2, op23d)))
     op23d.verify()
  
     val op23e = new AssertEqualsOp((0::0::0::0::0::Nil) :: (0::1::2::3::4::Nil) :: (0::2::4::6::8::Nil) ::  Nil, "MultiSplitOp")
@@ -688,7 +688,7 @@ object Streams {
 	  }
     }
 
-    val (a6, b6) = new StreamFunctions().zipWith[Int, Int, (Int, Int)]((_, _), zipWithFlushTest)
+    val (a6, b6) = new StreamFunctions().zipWith[Int, Int](zipWithFlushTest)
     new ListInput(list, a6)
     new ListInput(list map (_ + 1), b6)
     a6.flush
@@ -703,25 +703,49 @@ object Streams {
     a6.onData(7)
     b6.onData(9)
     zipWithFlushTest.verifyEnd
+
+    println("StreamOp Tests SUCCESSFUL")
+    println("API Tests")
     
-    println("API TESTS")
-    
-    new ListInput(1 :: 2 :: 3 :: Nil, Stream[Int] map {_ + 1} filter {_ > 2} print)
-    println
-    new ListInput(1 :: 2 :: 3 :: Nil, Stream[Int] drop 1 aggregate() print)
-    println
-    new ListInput(1 :: 2 :: 3 :: Nil, Stream[Int] dropWhile {_ < 2} flatMap {_ :: 0 :: Nil} print)
-    println
-    new ListInput(1 :: 2 :: 3 :: Nil, Stream[Int] fold({(x: Int, y: Int) => x + y}, 4) print)
-    println
-    new ListInput(1 :: 2 :: 3 :: 4 :: 5 :: Nil, Stream[Int] groupByStream {_ % 3} print)
-    println
-    new ListInput(1 :: 2 :: 3 :: 4 :: 5 :: Nil, Stream[Int] offset 2 prepend (-1 :: 0 :: Nil) reduce {(x: Int, y: Int) => x + y} print)
-    println
-    new ListInput(1 :: 2 :: 3 :: 4 :: 5 :: Nil, Stream[Int] take 4 takeWhile {_ < 4} print)
-    println
-    
-    println("\nEND OF TESTS")
+    val op29 = new AssertEqualsOp[Int](3 :: 4 :: Nil, "API 1")
+    new ListInput(1 :: 2 :: 3 :: Nil, Stream[Int] map {_ + 1} filter {_ > 2} into op29)
+    op29.verify()
+
+    val op30 = new AssertEqualsOp[List[Int]](List(2) :: List(3,2) :: Nil, "API 2")
+    new ListInput(1 :: 2 :: 3 :: Nil, Stream[Int] drop 1 aggregate() into op30)
+    op30.verify()
+
+    val op31 = new AssertEqualsOp[Int](2 :: 0 :: 3 :: 0 :: Nil, "API 3")
+    new ListInput(1 :: 2 :: 3 :: Nil, Stream[Int] dropWhile {_ < 2} flatMap {_ :: 0 :: Nil} into op31)
+    op31.verify()
+
+    val op32 = new AssertEqualsOp[Int](5 :: 7 :: 10 :: Nil, "API 4")
+    new ListInput(1 :: 2 :: 3 :: Nil, Stream[Int] fold({(x: Int, y: Int) => x + y}, 4) into op32)
+    op32.verify()
+
+    val op33 = new AssertEqualsOp[Map[Int, List[Int]]](Map(1 -> List(1)) :: Map(1 -> List(1), 2 -> List(2)) :: Map(1 -> List(1), 2 -> List(2), 0 -> List(3)) :: Map(1 -> List(4, 1), 2 -> List(2), 0 -> List(3)) :: Map(1 -> List(4, 1), 2 -> List(5, 2), 0 -> List(3)) :: Nil, "API 5")
+    new ListInput(1 :: 2 :: 3 :: 4 :: 5 :: Nil, Stream[Int] groupByStream {_ % 3} into op33)
+    op33.verify()
+
+    val op34 = new AssertEqualsOp[Int](-1 :: 0 :: 2 :: 5 :: Nil, "API 6")
+    new ListInput(1 :: 2 :: 3 :: 4 :: 5 :: Nil, Stream[Int] offset 2 prepend (-1 :: 0 :: Nil) reduce {(x: Int, y: Int) => x + y} into op34)
+    op34.verify()
+
+    val op35 = new AssertEqualsOp[Int](1 :: 2 :: 3 :: Nil, "API 7")
+    new ListInput(1 :: 2 :: 3 :: 4 :: 5 :: Nil, Stream[Int] take 4 takeWhile {_ < 4} into op35)
+    op35.verify()
+
+    val op36a = new AssertEqualsOp[Int](1 :: 2 :: 3 :: Nil, "API 8a")
+    val op36b = new AssertEqualsOp[Int](1 :: 2 :: 3 :: Nil, "API 8b")
+    new ListInput(1 :: 2 :: 3 :: 4 :: 5 :: Nil, Stream[Int] take 4 takeWhile {_ < 4} duplicate(Stream[Int] into op36a, Stream[Int] into op36b))
+    op36a.verify()
+    op36b.verify()
+
+    val op37 = new AssertEqualsOp[Int](2 :: 4 :: 6 :: 8 :: 10 :: Nil, "API 9")
+    new ListInput(1 :: 2 :: 3 :: 4 :: 5 :: Nil, Stream[Int] splitMerge (Stream[Int], Stream[Int]) map (x => x._1 + x._2) into op37)
+    op37.verify()
+
+    println("API Tests SUCCESSFUL")
   }
   
 }
