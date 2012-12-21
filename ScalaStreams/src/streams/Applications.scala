@@ -43,7 +43,7 @@ class FIRFilterOpPrepend(coefficients: List[Double], next: StreamOp[Double]) ext
     case Nil => after
     case x :: Nil => new MapOp((y: Double) => y * x, after)
     case x :: xs => {
-      val (a, b) = new StreamFunctions().zipWith(new MapOp((x: Pair[Double, Double]) => x._1 + x._2, after))
+      val (a, b) = StreamFunctions.zipWith(new MapOp((x: Pair[Double, Double]) => x._1 + x._2, after))
       new DuplicateOp(new MapOp((y: Double) => y * x, a), new PrependOp(0.0 :: Nil, split(xs, b)))
     }
   }

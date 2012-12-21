@@ -214,19 +214,15 @@ GROUP BY returnflag, linestatus;
 	          new GroupByOp(x => (x.returnflag, x.linestatus), (key: Pair[Char, Char]) => 
 	            new SplitMergeOp((out: StreamOp[Pair[Char, Char]]) => new MapOp((x: LineItem) => (x.returnflag, x.linestatus), out), 
 	                (zipList: StreamOp[List[Double]]) => new MultiSplitOp[LineItem, Double](8, 
-	                    (data: LineItem, i: Int) => i match {
-	                      case 0 => data.quantity
-	                      case 1 => data.extendedprice
-	                      case 2 => data.extendedprice * (1 - data.discount)
-	                      case 3 => data.extendedprice * (1 - data.discount) * (1 + data.tax)
-	                      case 4 => data.quantity
-	                      case 5 => data.extendedprice
-	                      case 6 => data.discount
-	                      case 7 => 1
-	                    },
 	                    (zipped: StreamOp[Double], i: Int) => i match {
-	                      case 0 | 1 | 2 | 3 | 7=> new SumOp(zipped)
-	                      case 4 | 5 | 6 => new AvgOp(zipped)
+	                      case 0 => new MapOp({_.quantity}, new SumOp(zipped))
+	                      case 1 => new MapOp({_.extendedprice}, new SumOp(zipped))
+	                      case 2 => new MapOp({x => x.extendedprice * (1 - x.discount)}, new SumOp(zipped))
+	                      case 3 => new MapOp({x => x.extendedprice * (1 - x.discount) * (1 + x.tax)}, new SumOp(zipped))
+	                      case 4 => new MapOp({_.quantity}, new AvgOp(zipped))
+	                      case 5 => new MapOp({_.extendedprice}, new AvgOp(zipped))
+	                      case 6 => new MapOp({_.discount}, new AvgOp(zipped))
+	                      case 7 => new MapOp({x => 1.0}, new SumOp(zipped))
 	                    }, zipList),
 	                new MapOp((x: Pair[Pair[Char, Char], List[Double]]) => new Result(x._1._1, x._1._2, x._2(0), x._2(1), x._2(2), x._2(3), x._2(4), x._2(5), x._2(6), x._2(7).toInt), new ResultOutput(printIntermediate))))))
     
