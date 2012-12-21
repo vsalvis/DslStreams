@@ -6,13 +6,14 @@ object DBToaster {
   def main(args: Array[String]) {
     val printIntermediate = false
     val filename = "lineitem_tiny.csv"
+    val lineItems = generateLineItemsFromFile(filename)
     val numTrials = 1
 
     // DBToaster, update on new data, no need to store old data
     val timing1 = new Array[Long](numTrials)
     for (i <- 0 to numTrials - 1) {
 	    val start = System.currentTimeMillis
-	    toastUpdateOnNew(printIntermediate, filename)
+	    toastUpdateOnNew(printIntermediate, lineItems)
 	    timing1(i) = System.currentTimeMillis - start
 	    println("--------" + timing1(i) + "------------")
     }
@@ -21,7 +22,7 @@ object DBToaster {
     val timing2 = new Array[Long](numTrials)
     for (i <- 0 to numTrials - 1) {
 	    val start2 = System.currentTimeMillis
-	    toastAggregateAndRecompute(printIntermediate, filename)
+	    toastAggregateAndRecompute(printIntermediate, lineItems)
 	    timing2(i) = System.currentTimeMillis - start2
 	    println("--------" + timing2(i) + "------------")
     }
@@ -68,7 +69,7 @@ object DBToaster {
     val timing1b = new Array[Long](numTrials)
     for (i <- 0 to numTrials - 1) {
 	    val start = System.currentTimeMillis
-	    toastUpdateMapReduce(printIntermediate, filename)
+	    toastUpdateMapReduce(printIntermediate, lineItems)
 	    timing1b(i) = System.currentTimeMillis - start
 	    println("--------" + timing1b(i) + "------------")
     }
@@ -81,7 +82,7 @@ object DBToaster {
     val timing1c = new Array[Long](numTrials)
     for (i <- 0 to numTrials - 1) {
 	    val start = System.currentTimeMillis
-	    toastUpdateSplit(printIntermediate, filename)
+	    toastUpdateSplit(printIntermediate, lineItems)
 	    timing1c(i) = System.currentTimeMillis - start
 	    println("--------" + timing1c(i) + "------------")
     }
@@ -137,10 +138,27 @@ GROUP BY returnflag, linestatus;
   LINE DELIMITED CSV (delimiter := '|');
 
  */
+    
   }
   
-  def toastUpdateOnNew(printIntermediate: Boolean, filename: String): Int = {
-    val input = new LineItemInput(filename, 
+  def generateLineItemsFromFile(filename: String): List[LineItem] = {
+    def createLineItem(line: String): LineItem = {
+      val values = line.split('|')
+      new LineItem(values(0).toInt, values(1).toInt, values(2).toInt, values(3).toInt, values(4).toDouble,
+          values(5).toDouble, values(6).toDouble, values(7).toDouble, values(8)(0), values(9)(0), parseDate(values(10)),
+          parseDate(values(11)), parseDate(values(12)), values(13), values(14), values(15))
+    }
+    
+    def parseDate(date: String): Date = {
+      val values = date.split("-")
+      new Date(values(0).toInt, values(1).toInt, values(2).toInt)
+    }
+
+    (Source.fromFile("data/" + filename).getLines map (x => createLineItem(x))).toList
+  }
+  
+  def toastUpdateOnNew(printIntermediate: Boolean, lineItems: List[LineItem]): Int = {
+    val input = new ListInput[LineItem](lineItems,
 	        new FilterOp(x => x.shipdate <= new Date(1997, 9, 1), 
 	            new GroupByOp(x => (x.returnflag, x.linestatus), (x: Pair[Char, Char]) => 
 	              new LineItemToResultOp(
@@ -150,8 +168,8 @@ GROUP BY returnflag, linestatus;
     42
   }
   
-  def toastUpdateMapReduce(printIntermediate: Boolean, filename: String): Int = {
-    val input = new LineItemInput(filename, 
+  def toastUpdateMapReduce(printIntermediate: Boolean, lineItems: List[LineItem]): Int = {
+    val input = new ListInput[LineItem](lineItems,
 	        new FilterOp(x => x.shipdate <= new Date(1997, 9, 1), 
 	          new GroupByOp(x => (x.returnflag, x.linestatus), (x: Pair[Char, Char]) => 
 	            new MapOp[LineItem, Result]((data: LineItem) => new Result(data.returnflag, data.linestatus, 
@@ -170,8 +188,8 @@ GROUP BY returnflag, linestatus;
     42
   }
   
-  def toastAggregateAndRecompute(printIntermediate: Boolean, filename: String): Int = {
-    val input2 = new LineItemInput(filename, 
+  def toastAggregateAndRecompute(printIntermediate: Boolean, lineItems: List[LineItem]): Int = {
+    val input2 = new ListInput[LineItem](lineItems,
         new FilterOp(x => x.shipdate <= new Date(1997, 9, 1), 
             new GroupByOp(x => (x.returnflag, x.linestatus), (x: Pair[Char, Char]) =>
               new AggregatorOp(
@@ -208,8 +226,8 @@ GROUP BY returnflag, linestatus;
     }
   }
   
-  def toastUpdateSplit(printIntermediate: Boolean, filename: String): Int = {
-    val input = new LineItemInput(filename, 
+  def toastUpdateSplit(printIntermediate: Boolean, lineItems: List[LineItem]): Int = {
+    val input = new ListInput[LineItem](lineItems,
 	        new FilterOp(x => x.shipdate <= new Date(1997, 9, 1), 
 	          new GroupByOp(x => (x.returnflag, x.linestatus), (key: Pair[Char, Char]) => 
 	            new SplitMergeOp((out: StreamOp[Pair[Char, Char]]) => new MapOp((x: LineItem) => (x.returnflag, x.linestatus), out), 
@@ -248,28 +266,6 @@ GROUP BY returnflag, linestatus;
         + sum_disc_price + ", " + sum_charge + ", " + avg_qty + ", " + avg_price + ", "
         + avg_disc + ", " + count_order)
   }
-
-  class LineItemInput(filename: String, next: StreamOp[LineItem]) extends StreamInput[LineItem](next) {
-//    next.onData(createLineItem("1|156|4|1|17|17954.55|0.04|0.02|N|O|1996-03-13|1996-02-12|1996-03-22|DELIVER IN PERSON|TRUCK|egular courts above the"))
-//    next.onData(createLineItem("1|156|4|1|17|17954.55|0.04|0.02|M|O|1998-03-13|1996-02-12|1996-03-22|DELIVER IN PERSON|TRUCK|egular courts above the"))
-//    next.onData(createLineItem("1|156|4|1|7777|17954.55|0.04|0.02|N|O|1996-03-13|1996-02-12|1996-03-22|DELIVER IN PERSON|TRUCK|egular courts above the"))
-
-    Source.fromFile("data/" + filename).getLines foreach (x => next.onData(createLineItem(x))) 
-    
-    def createLineItem(line: String): LineItem = {
-      val values = line.split('|')
-      new LineItem(values(0).toInt, values(1).toInt, values(2).toInt, values(3).toInt, values(4).toDouble,
-          values(5).toDouble, values(6).toDouble, values(7).toDouble, values(8)(0), values(9)(0), parseDate(values(10)),
-          parseDate(values(11)), parseDate(values(12)), values(13), values(14), values(15))
-    }
-    
-    def parseDate(date: String): Date = {
-      val values = date.split("-")
-      new Date(values(0).toInt, values(1).toInt, values(2).toInt)
-    }
-    
-    def flush = next.flush
-  }
   
   object ResultOutput {
     var instanceCtr = 0
@@ -291,7 +287,12 @@ GROUP BY returnflag, linestatus;
       lastResult = data
     }
     
-    override def flush = println(lastResult.toString)
+    override def flush = {
+      if (printIntermediate) 
+        println(lastResult.toString)
+      else 
+        print(".")
+    }
   }
   
   class LineItemToResultOp(next: StreamOp[Result]) extends StreamOp[LineItem] {

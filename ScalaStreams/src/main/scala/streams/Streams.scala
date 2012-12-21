@@ -360,10 +360,18 @@ abstract class StreamInput[A](stream: StreamOp[A])
 
 class ListInput[A](input: List[A], stream: StreamOp[A]) extends StreamInput[A](stream) {
   input foreach stream.onData
+  
+  def flush = {
+    stream.flush
+  }
 }
 
 class ElementInput[A](input: A, stream: StreamOp[A]) extends StreamInput[A](stream) {
   stream.onData(input)
+
+  def flush = {
+    stream.flush
+  }
 }
 
 
