@@ -3885,20 +3885,27 @@ package dbtoaster {
 
     }
     def dispatcher(event: DBTEvent, onEventProcessedHandler: Unit => Unit): Unit = {
-      event match {
-        case StreamEvent(InsertTuple, o, "LINEITEM", (var_LINEITEM_ORDERKEY: Long)::(var_LINEITEM_PARTKEY: Long)::(var_LINEITEM_SUPPKEY: Long)::(var_LINEITEM_LINENUMBER: Long)::(var_LINEITEM_QUANTITY: Double)::(var_LINEITEM_EXTENDEDPRICE: Double)::(var_LINEITEM_DISCOUNT: Double)::(var_LINEITEM_TAX: Double)::(var_LINEITEM_RETURNFLAG: String)::(var_LINEITEM_LINESTATUS: String)::(var_LINEITEM_SHIPDATE: Date)::(var_LINEITEM_COMMITDATE: Date)::(var_LINEITEM_RECEIPTDATE: Date)::(var_LINEITEM_SHIPINSTRUCT: String)::(var_LINEITEM_SHIPMODE: String)::(var_LINEITEM_COMMENT: String)::Nil) => onInsertLINEITEM(var_LINEITEM_ORDERKEY,var_LINEITEM_PARTKEY,var_LINEITEM_SUPPKEY,var_LINEITEM_LINENUMBER,var_LINEITEM_QUANTITY,var_LINEITEM_EXTENDEDPRICE,var_LINEITEM_DISCOUNT,var_LINEITEM_TAX,var_LINEITEM_RETURNFLAG,var_LINEITEM_LINESTATUS,var_LINEITEM_SHIPDATE,var_LINEITEM_COMMITDATE,var_LINEITEM_RECEIPTDATE,var_LINEITEM_SHIPINSTRUCT,var_LINEITEM_SHIPMODE,var_LINEITEM_COMMENT);
+      var nextEvent = event
 
-        case StreamEvent(DeleteTuple, o, "LINEITEM", (var_LINEITEM_ORDERKEY: Long)::(var_LINEITEM_PARTKEY: Long)::(var_LINEITEM_SUPPKEY: Long)::(var_LINEITEM_LINENUMBER: Long)::(var_LINEITEM_QUANTITY: Double)::(var_LINEITEM_EXTENDEDPRICE: Double)::(var_LINEITEM_DISCOUNT: Double)::(var_LINEITEM_TAX: Double)::(var_LINEITEM_RETURNFLAG: String)::(var_LINEITEM_LINESTATUS: String)::(var_LINEITEM_SHIPDATE: Date)::(var_LINEITEM_COMMITDATE: Date)::(var_LINEITEM_RECEIPTDATE: Date)::(var_LINEITEM_SHIPINSTRUCT: String)::(var_LINEITEM_SHIPMODE: String)::(var_LINEITEM_COMMENT: String)::Nil) => onDeleteLINEITEM(var_LINEITEM_ORDERKEY,var_LINEITEM_PARTKEY,var_LINEITEM_SUPPKEY,var_LINEITEM_LINENUMBER,var_LINEITEM_QUANTITY,var_LINEITEM_EXTENDEDPRICE,var_LINEITEM_DISCOUNT,var_LINEITEM_TAX,var_LINEITEM_RETURNFLAG,var_LINEITEM_LINESTATUS,var_LINEITEM_SHIPDATE,var_LINEITEM_COMMITDATE,var_LINEITEM_RECEIPTDATE,var_LINEITEM_SHIPINSTRUCT,var_LINEITEM_SHIPMODE,var_LINEITEM_COMMENT);
+      while (nextEvent != null) {
+        nextEvent match {
+          case StreamEvent(InsertTuple, o, "LINEITEM", (var_LINEITEM_ORDERKEY: Long)::(var_LINEITEM_PARTKEY: Long)::(var_LINEITEM_SUPPKEY: Long)::(var_LINEITEM_LINENUMBER: Long)::(var_LINEITEM_QUANTITY: Double)::(var_LINEITEM_EXTENDEDPRICE: Double)::(var_LINEITEM_DISCOUNT: Double)::(var_LINEITEM_TAX: Double)::(var_LINEITEM_RETURNFLAG: String)::(var_LINEITEM_LINESTATUS: String)::(var_LINEITEM_SHIPDATE: Date)::(var_LINEITEM_COMMITDATE: Date)::(var_LINEITEM_RECEIPTDATE: Date)::(var_LINEITEM_SHIPINSTRUCT: String)::(var_LINEITEM_SHIPMODE: String)::(var_LINEITEM_COMMENT: String)::Nil) => onInsertLINEITEM(var_LINEITEM_ORDERKEY,var_LINEITEM_PARTKEY,var_LINEITEM_SUPPKEY,var_LINEITEM_LINENUMBER,var_LINEITEM_QUANTITY,var_LINEITEM_EXTENDEDPRICE,var_LINEITEM_DISCOUNT,var_LINEITEM_TAX,var_LINEITEM_RETURNFLAG,var_LINEITEM_LINESTATUS,var_LINEITEM_SHIPDATE,var_LINEITEM_COMMITDATE,var_LINEITEM_RECEIPTDATE,var_LINEITEM_SHIPINSTRUCT,var_LINEITEM_SHIPMODE,var_LINEITEM_COMMENT);
 
-        case StreamEvent(SystemInitialized, o, "", Nil) => onSystemInitialized();
+          case StreamEvent(DeleteTuple, o, "LINEITEM", (var_LINEITEM_ORDERKEY: Long)::(var_LINEITEM_PARTKEY: Long)::(var_LINEITEM_SUPPKEY: Long)::(var_LINEITEM_LINENUMBER: Long)::(var_LINEITEM_QUANTITY: Double)::(var_LINEITEM_EXTENDEDPRICE: Double)::(var_LINEITEM_DISCOUNT: Double)::(var_LINEITEM_TAX: Double)::(var_LINEITEM_RETURNFLAG: String)::(var_LINEITEM_LINESTATUS: String)::(var_LINEITEM_SHIPDATE: Date)::(var_LINEITEM_COMMITDATE: Date)::(var_LINEITEM_RECEIPTDATE: Date)::(var_LINEITEM_SHIPINSTRUCT: String)::(var_LINEITEM_SHIPMODE: String)::(var_LINEITEM_COMMENT: String)::Nil) => onDeleteLINEITEM(var_LINEITEM_ORDERKEY,var_LINEITEM_PARTKEY,var_LINEITEM_SUPPKEY,var_LINEITEM_LINENUMBER,var_LINEITEM_QUANTITY,var_LINEITEM_EXTENDEDPRICE,var_LINEITEM_DISCOUNT,var_LINEITEM_TAX,var_LINEITEM_RETURNFLAG,var_LINEITEM_LINESTATUS,var_LINEITEM_SHIPDATE,var_LINEITEM_COMMITDATE,var_LINEITEM_RECEIPTDATE,var_LINEITEM_SHIPINSTRUCT,var_LINEITEM_SHIPMODE,var_LINEITEM_COMMENT);
+ 
+          case StreamEvent(SystemInitialized, o, "", Nil) => onSystemInitialized();
 
-        case EndOfStream => ();
+          case EndOfStream => ();
 
-        case _ => throw DBTFatalError("Event could not be dispatched: " + event)
+          case _ => throw DBTFatalError("Event could not be dispatched: " + event)
+        }
+        onEventProcessedHandler();
+
+        if(sources.hasInput()) 
+          nextEvent = sources.nextInput
+        else
+          nextEvent = null
       }
-      onEventProcessedHandler();
-
-      if(sources.hasInput()) dispatcher(sources.nextInput(), onEventProcessedHandler) 
     }
     def run(onEventProcessedHandler: Unit => Unit = (_ => ())): Unit ={
       fillTables();
