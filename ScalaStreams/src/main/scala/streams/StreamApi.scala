@@ -9,10 +9,10 @@ object Stream {
 }
 
 abstract class Stream[A,B] { self =>
-  def into(out: StreamOp[B]): StreamOp[A] //B, C => A, C
+  def into(out: StreamOp[B]): StreamOp[A]
   
-  // consumer api
-  def print = into(new PrintListOp())
+  def print = into(new PrintlnOp())
+  
   def aggregate() = new Stream[A,List[B]] {
     def into(out: StreamOp[List[B]]) = self.into(new AggregatorOp[B](out))
   }
@@ -60,7 +60,8 @@ abstract class Stream[A,B] { self =>
     def into(out: StreamOp[B]) = self.into(new TakeWhileOp(p, out))
   }
   
-  // special functions: Those are not simple Streams because they have multiple in- or output streams
+  // special functions: Those are not simple Streams because they have
+  // multiple in- or output streams
   def duplicate(first: StreamOp[B], second: StreamOp[B]) = {
     self.into(new DuplicateOp(first, second))
   }

@@ -4,13 +4,13 @@ package streams
 object Applications {
   def main(args: Array[String]) {
     val filename = "lineitem_tiny.csv"
-    new ListInput(DBToaster.generateLineItemsFromFile(filename),
-        new MapOp[DBToaster.LineItem, Double](_.quantity,
+    new ListInput(StreamDBToaster.generateLineItemsFromFile(filename),
+        new MapOp[StreamDBToaster.LineItem, Double](_.quantity,
             new FIRFilterOp(1.0 :: 2.0 :: 3.0 :: Nil, new PrintlnOp)
         ))
     println("----------")
-    new ListInput(DBToaster.generateLineItemsFromFile(filename),
-        new MapOp[DBToaster.LineItem, Double](_.quantity,
+    new ListInput(StreamDBToaster.generateLineItemsFromFile(filename),
+        new MapOp[StreamDBToaster.LineItem, Double](_.quantity,
             new FIRFilterOpPrepend(1.0 :: 2.0 :: 3.0 :: Nil, new PrintlnOp)
         ))
     println("----------")
@@ -21,7 +21,6 @@ object Applications {
     new ListInput[Double](1.0 :: 1.0 :: 1.0 :: 1.0 :: 2.0 :: 3.0 :: 4.0 :: 5.0 :: Nil, new FIRFilterOpSplit(1.0 :: 2.0 :: 3.0 :: Nil, new PrintlnOp))
   }
 }
-
 
 class FIRFilterOp(coefficients: List[Double], next: StreamOp[Double]) extends StreamOp[Double] {
   var values: List[Double] = Nil
@@ -84,11 +83,3 @@ class BandPassFilterOp(rate: Double, low: Double, high: Double, taps: Int, next:
     extends SplitMergeOp({mergeOp: StreamOp[Double] => new LowPassFilterOp(rate, low, taps, 0, mergeOp)},
         {mergeOp: StreamOp[Double] => new LowPassFilterOp(rate, high, taps, 0, mergeOp)},
         new MapOp({(x: Pair[Double, Double]) => x._2 - x._1}, next)) {}
-
-
-// ok: signal processing: lowpass etc. from streamit cookbook examples
-// ok: API
-// DBToaster query benchmark
-// LMS
-// buffer
-// parallel

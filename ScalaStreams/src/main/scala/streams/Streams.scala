@@ -4,17 +4,15 @@ import scala.actors.Actor._
 
 abstract class StreamOp[A] {
   def onData(data: A)
-  
   def flush
 }
 
-case class Flush
-
 class StreamSynchronizer[A] {
+  case class Flush
   
   def getSynchronizedStream(next: StreamOp[A]): StreamOp[A] = new StreamOp[A] {
     def onData(data: A) = synchronizationActor ! (next, data)
-	def flush = synchronizationActor ! (next, Flush)  // should this be "?!" ?
+	def flush = synchronizationActor ! (next, Flush)
   }
 
   private val synchronizationActor = actor {
@@ -262,7 +260,6 @@ class MultiSplitOp[A, B](num: Int, streams: (StreamOp[B], Int) => StreamOp[A], n
 
 object StreamFunctions {
   
-  // Changed output to List[(A, B)], free GroupBy, can always flatten after
   def equiJoin[A, B, K] (keyFunA: A => K, keyFunB: B => K, next: StreamOp[List[(A, B)]]): (StreamOp[A], StreamOp[B]) = {
     val aMap = new scala.collection.mutable.HashMap[K, List[A]]
     val bMap = new scala.collection.mutable.HashMap[K, List[B]]
@@ -782,13 +779,32 @@ object Streams {
     new ListInput(0 :: 1 :: 2 :: Nil, Stream[Int] multiSplit (5, (next: StreamOp[Int], index) => new MapOp(x => x * index, next)) into op43)
     op43.verify()
 
-
     println("API Tests SUCCESSFUL")
+    
+    // Examples for report
+    
+    new ListInput(List.range(0, 6), 
+        new MapOp({x: Int => 3 * x}, 
+            new DuplicateOp(
+            	new FilterOp({x: Int => x % 2 == 0}, 
+            	    new MapOp({x: Int => 2 * x + " (even)"}, new PrintlnOp)),
+            	new FilterOp({x: Int => x % 2 == 1}, 
+            	    new MapOp({x: Int => 3 * x + " (odd)"}, new PrintlnOp)))))
+
+    val stream01 = new MapOp({x: Int => 2 * x}, new PrintlnOp)
+    val stream02 = new FilterOp({x: Int => x % 2 == 0}, stream01) // Adding on the left
+    // cannot add on right, stream finishes with PrintlnOp
+    
+    val streamAPI1: Stream[Int, Int] = Stream[Int] map {2 * _}
+    val streamAPI2: Stream[Int, Int] = streamAPI1 filter {_ % 2 == 0} // Adding on the right
+    // cannot add on left before finishing the stream
+    val streamAPI3: StreamOp[Int] = streamAPI2 print // Instantiating the StreamOps
+    
+    new ListInput(List.range(0, 6), 
+        Stream[Int] map {3 * _} duplicate (
+            Stream[Int] filter {_ % 2 == 0} map {2 * _ + " (even)"} print,
+            Stream[Int] filter {_ % 2 == 1} map {3 * _ + " (odd)"} print))
+    
   }
   
 }
-
-// multiplex/split (backpressure) /duplicate
-// scala pipes, db toaster updated
-// optimization: ordered/unordered stream, flush? window? aggregate
-// streamit compiler?
