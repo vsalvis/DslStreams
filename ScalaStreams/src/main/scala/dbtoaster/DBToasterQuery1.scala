@@ -22,7 +22,7 @@ import java.util.GregorianCalendar;
 import xml._;
 
 package dbtoaster {
-  class Query1(filename: String) {
+  class DBToasterQuery1(filename: String) {
     val s1 = createInputStreamSource(new FileInputStream("data/" + filename), List(new CSVAdaptor("LINEITEM", List(IntColumn,IntColumn,IntColumn,IntColumn,FloatColumn,FloatColumn,FloatColumn,FloatColumn,StringColumn,StringColumn,DateColumn,DateColumn,DateColumn,StringColumn,StringColumn,StringColumn), "", "", "", "\\|")), Delimited("\n"))
 
 

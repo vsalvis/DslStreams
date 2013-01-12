@@ -1,45 +1,46 @@
 package streamTests
 
 import org.scalameter.api._
-import streams.DBToaster
-import org.dbtoaster.dbtoasterlib.K3Collection._
+import streams.StreamDBToaster._
 import scala.collection.mutable.Map;
 import java.io._
 
 
 object DBToasterBenchmark extends PerformanceTest.Quickbenchmark {
-  val filenames = Gen.enumeration("filename")("lineitem_tiny.csv", "lineitem_standard.csv", "lineitem_big.csv")
+  val filenames = Gen.enumeration("filename")("lineitem_0200.csv", "lineitem_0400.csv", "lineitem_0600.csv", "lineitem_0800.csv",
+      "lineitem_1000.csv", "lineitem_2000.csv", "lineitem_3000.csv", "lineitem_4000.csv", "lineitem_5000.csv", "lineitem_6000.csv")    
+      //"lineitem_tiny.csv", "lineitem_standard.csv", "lineitem_big.csv")
 
   val toasts = for {
     filename <- filenames
-  } yield (DBToaster.toast(Right(filename))(_))
+  } yield (toast(Right(filename))(_))
 
   val printIntermediate = false
   
   performance of "Toast" in {
     measure method "toastUpdateOnNew" in {
       using(toasts) in {
-        toast => toast(DBToaster.toastUpdateOnNew(printIntermediate))
+        toast => toast(toastUpdateOnNew(printIntermediate))
       }
     }
     measure method "toastUpdateMapReduce" in {
       using(toasts) in {
-        toast => toast(DBToaster.toastUpdateMapReduce(printIntermediate))
+        toast => toast(toastUpdateMapReduce(printIntermediate))
       }
     }
     measure method "toastUpdateSplit" in {
       using(toasts) in {
-        toast => toast(DBToaster.toastUpdateSplit(printIntermediate))
+        toast => toast(toastUpdateSplit(printIntermediate))
       }
     }
     measure method "toastAggregateAndRecompute" in {
       using(toasts) in {
-        toast => toast(DBToaster.toastAggregateAndRecompute(printIntermediate))
+        toast => toast(toastAggregateAndRecompute(printIntermediate))
       }
     }
     measure method "originalDBToaster" in {
       using(filenames) in {
-        filename => new dbtoaster.Query1(filename).run(_ => ())
+        filename => new dbtoaster.DBToasterQuery1(filename).run(_ => ())
       }
     }
   }

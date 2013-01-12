@@ -2,7 +2,7 @@ name := "streams"
 
 version := "1.0"
 
-scalaVersion := "2.10.0-M7"
+scalaVersion := "2.10.0-RC5"
 //M7 works for lms
 //RC5 works for scalameter
 

@@ -2,7 +2,7 @@ package streams
 
 import scala.io.Source
 
-object DBToaster {
+object StreamDBToaster {
   def main(args: Array[String]) {
     val printIntermediate = false
     val filename = "lineitem_tiny.csv"
@@ -56,16 +56,6 @@ object DBToaster {
     // 1140:  1281 1138 1223 1100 1082 1110 1088 1095 1153 1138
     // 1237:  1285 1172 1389 1409 1148 1293 1117 1245 1224 1097
     // 1449:  1301 1120 1211 1116 1102 1220 3405 1634 1096 1285
-
-    // Big:
-    // Update: 
-    // 
-    // 
-    // 
-    // Recompute:
-    // 
-    // 
-    // 
     
     // Use MapOp and ReduceOp instead of combined LineItemListToResultOp
     val timing1b = new Array[Long](numTrials)
@@ -317,7 +307,6 @@ GROUP BY returnflag, linestatus;
         data.size))
     def flush = next.flush
   }
-  
   
   class ResultAggregatorOp(next: StreamOp[Result]) extends StreamOp[Result] {
     var last: Option[Result] = None
