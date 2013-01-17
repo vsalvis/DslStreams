@@ -10,8 +10,11 @@ object Stream {
 
 abstract class Stream[A,B] { self =>
   def into(out: StreamOp[B]): StreamOp[A]
+  def into[C](next: Stream[B, C]): Stream[A, C] = new Stream[A, C] {
+    def into(out: StreamOp[C]) = self.into(next.into(out))
+  }
   
-  def print = into(new PrintlnOp())
+  def print = into(new PrintlnOp[B]())
   
   def aggregate() = new Stream[A,List[B]] {
     def into(out: StreamOp[List[B]]) = self.into(new AggregatorOp[B](out))

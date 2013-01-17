@@ -787,18 +787,30 @@ object Streams {
         new MapOp({x: Int => 3 * x}, 
             new DuplicateOp(
             	new FilterOp({x: Int => x % 2 == 0}, 
-            	    new MapOp({x: Int => 2 * x + " (even)"}, new PrintlnOp)),
+            	    new MapOp({x: Int => 2 * x + " (even)"},
+            	        new PrintlnOp)),
             	new FilterOp({x: Int => x % 2 == 1}, 
-            	    new MapOp({x: Int => 3 * x + " (odd)"}, new PrintlnOp)))))
+            	    new MapOp({x: Int => 3 * x + " (odd)"},
+            	        new PrintlnOp)))))
 
+    // Creating a StreamOp:
     val stream01 = new MapOp({x: Int => 2 * x}, new PrintlnOp)
-    val stream02 = new FilterOp({x: Int => x % 2 == 0}, stream01) // Adding on the left
-    // cannot add on right, stream finishes with PrintlnOp
+    // Adding on the left:
+    val stream02 = new FilterOp({x: Int => x % 2 == 0}, stream01)
+    // Cannot add on right, stream finishes with PrintlnOp
     
-    val streamAPI1: Stream[Int, Int] = Stream[Int] map {2 * _}
-    val streamAPI2: Stream[Int, Int] = streamAPI1 filter {_ % 2 == 0} // Adding on the right
-    // cannot add on left before finishing the stream
-    val streamAPI3: StreamOp[Int] = streamAPI2 print // Instantiating the StreamOps
+    // Creating a Stream of Ints:
+    val stream1: Stream[Int, Int] = Stream[Int] map {3 * _}
+    // Adding operations on the right:
+    val stream2: Stream[Int, Int] = stream1 map {_ - 1}
+    // Creating another Stream of Ints:
+    val stream3: Stream[Int, Int] = Stream[Int] filter {_ % 2 == 0}
+    // Adding it on the left:
+    val stream4: Stream[Int, Int] = stream3 into stream2
+    // Instantiating the StreamOps:
+    val streamOp: StreamOp[Int] = stream4.print
+    // Use the StreamOps:
+    new ListInput(List.range(0, 6), streamOp)
     
     new ListInput(List.range(0, 6), 
         Stream[Int] map {3 * _} duplicate (
