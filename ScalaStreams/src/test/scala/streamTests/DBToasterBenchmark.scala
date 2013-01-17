@@ -8,7 +8,8 @@ import java.io._
 
 object DBToasterBenchmark extends PerformanceTest.Quickbenchmark {
   val filenames = Gen.enumeration("filename")("lineitem_0200.csv", "lineitem_0400.csv", "lineitem_0600.csv", "lineitem_0800.csv",
-      "lineitem_1000.csv", "lineitem_2000.csv", "lineitem_3000.csv", "lineitem_4000.csv", "lineitem_5000.csv", "lineitem_6000.csv")    
+      "lineitem_1000.csv", "lineitem_2000.csv", "lineitem_3000.csv", "lineitem_4000.csv", "lineitem_5000.csv", "lineitem_6000.csv",    
+      "lineitem_7000.csv", "lineitem_8000.csv", "lineitem_9000.csv")    
       //"lineitem_tiny.csv", "lineitem_standard.csv", "lineitem_big.csv")
 
   val toasts = for {
@@ -77,3 +78,78 @@ object DBToasterBenchmark extends PerformanceTest.Quickbenchmark {
 //::Benchmark Toast.originalDBToaster::
 //Parameters(filename -> lineitem_tiny.csv): 47.592
 //Parameters(filename -> lineitem_standard.csv): 500.104
+
+//toastUpdateOnNew
+//0.833
+//1.645
+//2.446
+//3.252
+//4.012
+//7.979
+//12.079
+//15.999
+//19.766
+//24.0
+//28.224
+//32.227
+//36.422
+//
+//toastUpdateMapReduce
+//0.827
+//1.625
+//2.413
+//3.198
+//3.961
+//7.95
+//11.851
+//15.932
+//19.89
+//23.692
+//28.231
+//32.334
+//36.397
+//
+//toastUpdateSplit
+//1.11
+//2.176
+//3.145
+//4.152
+//5.074
+//9.97
+//15.133
+//20.13
+//24.882
+//29.851
+//35.164
+//39.933
+//45.189
+//
+//toastAggregateAndRecompute
+//2.177
+//7.427
+//15.365
+//25.143
+//37.992
+//139.442
+//332.16
+//602.119
+//963.614
+//1353.689
+//1840.775
+//2422.789
+//3047.085
+//
+//originalDBToaster
+//17.273
+//36.533
+//55.909
+//74.302
+//93.283
+//189.469
+//281.923
+//381.895
+//476.027
+//576.171
+//673.816
+//768.207
+//861.166
