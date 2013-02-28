@@ -6,5 +6,7 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
 	<classpathentry kind="lib" path="/Users/vera/Downloads/scalameter_2.10-0.2.jar"/>
 	<classpathentry kind="lib" path="/Users/vera/Downloads/dbtoaster/lib/dbt_scala/dbtlib.jar"/>
+	<classpathentry kind="lib" path="/Users/vera/Downloads/scalatest_2.9.0-1.9.1-scaladoc.jar"/>
+	<classpathentry kind="lib" path="/Users/vera/Downloads/scalatest_2.9.0-1.9.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
