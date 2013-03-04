@@ -13,6 +13,8 @@ import java.io.PrintWriter
 
 
 class DSLTest extends FlatSpec with ShouldMatchers {
+  
+  val printall = false 
   trait Prog { this: Base with StreamDSL with MathOps with NumericOps with StringOps =>
     def t0(s: Rep[Stream[Int,Double]]): Rep[Stream[Int,Double]] = 
       s * unit(42.0)
@@ -36,7 +38,7 @@ class DSLTest extends FlatSpec with ShouldMatchers {
   
   def getCode(nr: Int): String = {
     val output = new java.io.StringWriter
-    val concreteProg = new Prog with EffectExp with StreamDSLExp with StreamDSLOpt with CompileScala { self =>
+    val concreteProg = new Prog with EffectExp with StreamDSLExp with StreamDSLOpt with MathOpsExp with NumericOpsExp with StringOpsExp with CompileScala { self =>
       override val codegen = new ScalaGenEffect with ScalaGenStreamDSL with ScalaGenMathOps with ScalaGenNumericOps with ScalaGenStringOps { val IR: self.type = self }
     }
     import concreteProg._
@@ -161,14 +163,17 @@ x3
       
   val table = Table("n", List.range(0, expected.size):_*)
   
-  forAll (table) { (n:Int) =>
-    println("%generated: " + n + "%" + getCode(n) + "%")
-    println("%expected:  " + n + "%" + getExpected(n) + "%")
-  } 
-
-  forAll (table) { (n:Int) =>
-    getCode(n) should equal (getExpected(n))
-  } 
+  if (printall) {
+    forAll (table) { (n:Int) =>
+      println("%generated: " + n + "%" + getCode(n) + "%")
+      println("%expected:  " + n + "%" + getExpected(n) + "%")
+    } 
+  }
+  "All functions" should "generate the expected code" in {
+    forAll (table) { (n:Int) =>
+      getCode(n) should equal (getExpected(n))
+    }
+  }
 
 /*  val f = compile(f)
   println("scaling 1.0 :: 2.0 :: 3.0 :: Nil by a factor of 42: ")
