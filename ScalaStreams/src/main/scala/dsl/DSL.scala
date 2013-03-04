@@ -52,13 +52,13 @@ trait StreamDSL { this: Base =>
 }
 
 // Intermediate representation
-trait StreamDSLExp extends StreamDSL with FunctionsExp with MathOpsExp with NumericOpsExp with NumericOpsExpOpt with StringOpsExp { this: BaseExp =>
+trait StreamDSLExp extends StreamDSL with FunctionsExp with MathOpsExp with NumericOpsExp with NumericOpsExpOpt { this: BaseExp =>
 
   case class Scale[A](s: Exp[Stream[A,Double]], k: Exp[Double]) extends Def[Stream[A,Double]]
   override def scale[A:Manifest](s: Exp[Stream[A,Double]], k: Exp[Double]) = Scale[A](s, k)
 
-  case class Map[A,B,C](s: Exp[Stream[A,B]], f: Exp[B => C]) extends Def[Stream[A,C]]
-  override def map[A:Manifest, B:Manifest, C:Manifest](s: Exp[Stream[A,B]], f: Exp[B] => Exp[C]) = Map[A,B,C](s, doLambdaDef(f))
+  case class Map[A,B,C](s: Exp[Stream[A,B]], f: Exp[B => C])(implicit val mA: Manifest[A], val mB: Manifest[B], val mC: Manifest[C]) extends Def[Stream[A,C]]
+  override def map[A:Manifest, B: Manifest, C:Manifest](s: Exp[Stream[A,B]], f: Exp[B] => Exp[C]) = Map[A,B,C](s, doLambdaDef(f))
 
 }
 
@@ -68,8 +68,12 @@ trait StreamDSLOpt extends StreamDSLExp { this: BaseExp =>
   override def scale[A:Manifest](s: Exp[Stream[A,Double]], k: Exp[Double]) = k match {
     case Const(1.0) => s
     case _ => s match {
-      case Def(Scale(s1: Exp[Stream[A,Double]], k1: Exp[Double])) => super.scale[A](s1, k * k1)
-//      case Def(Map(s1, f)) => super.map(s1, {x: A => k * f(x)})
+      case Def(Scale(s1, k1)) => super.scale[A](s1, numeric_times(k, k1))
+      case Def(m@Map(s1: Exp[Stream[A, Any]], f: (Any => Exp[Double]))) => {
+//        type tp = m.mB.erasure
+//        val tp = m.mB.erasure
+        super.map[A, Any, Double](s1, (x: Any)  => numeric_times(k, f(x)))(manifest[A], m.mB, manifest[Double]) 
+      }
       case _ => super.scale(s, k)
     }
   }
@@ -99,65 +103,68 @@ trait ScalaGenStreamDSL extends ScalaGenBase with ScalaGenFunctions {
 
 }
 
-// Usage
-trait Prog { this: Base with StreamDSL with MathOps with NumericOps with StringOps =>
+// Usage Example: First, we write a program in the DSL, importing the necessary LMS primitives.
+trait Prog { this: Base with StreamDSL with MathOps with NumericOps =>
+  def dsl_f(s: Rep[Stream[Int,Double]]): Rep[Stream[Int,Double]] = {
+    s * unit(42.0)
+  }
 
-  def f(s: Rep[Stream[Int,Double]]): Rep[Stream[Int,Double]] = s * unit(42.0)
-
-  def g(s: Rep[Stream[Int,Double]]): Rep[Stream[Int,Double]] = s * unit(1.0)
+  def dsl_g(s: Rep[Stream[Double,Double]]): Rep[Stream[Double,Double]] = {
+    map(s, {(x: Rep[Double]) => Math.pow(unit(2.0), x)})
+  }
   
-  def h(s: Rep[Stream[Double,Double]]): Rep[Stream[Double,Double]] = map[Double,Double,Double](s, {(x: Rep[Double]) => Math.pow(unit(2.0), x)})
-  
-  def test(s: Rep[Stream[Double,Double]]): Rep[Stream[Double,Double]] = 
+  def dsl_h(s: Rep[Stream[Double,Double]]): Rep[Stream[Double,Double]] = { 
     map(map(s, {(x: Rep[Double]) => Math.pow(unit(2.0), x)}),
         {(x: Rep[Double]) => x + unit(3.0)})
-  
-  def f1(s: Rep[Stream[Double,Double]]): Rep[Stream[Double,Double]] = s * unit(42.0) * unit(2.0) * unit(3.0)
-  def f2(s: Rep[Stream[Double,Double]]): Rep[Stream[Double,Double]] = map(s, {(x: Rep[Double]) => Math.pow(unit(2.0), x)}) * unit(2.0) * unit(3.0)
-  def f3(s: Rep[Stream[Double,Double]]): Rep[Stream[Double,Double]] = map(s * unit(42.0) * unit(3.0), {(x: Rep[Double]) => Math.pow(unit(2.0), x)}) * unit(2.0)
-  def f4(s: Rep[Stream[Int,Double]]): Rep[Stream[Int,String]] = map[Int,Double,String](s, {(x: Rep[Double]) => "'" + x + "'"})
-
+  }
 }
 
 object Usage extends App {
+  // We then instantiate the program, so that we can generate regular Scala code from the DSL code.
   val concreteProg = new Prog with EffectExp with StreamDSLExp with StreamDSLOpt with CompileScala { self =>
-    override val codegen = new ScalaGenEffect with ScalaGenStreamDSL with ScalaGenMathOps with ScalaGenNumericOps with ScalaGenStringOps { val IR: self.type = self }
-    codegen.emitSource(f, "F", new java.io.PrintWriter(System.out))
-    codegen.emitSource(g, "G", new java.io.PrintWriter(System.out))
-    codegen.emitSource(h, "H", new java.io.PrintWriter(System.out))
-    codegen.emitSource(test, "Test", new java.io.PrintWriter(System.out))
-    codegen.emitSource(f1, "F1", new java.io.PrintWriter(System.out))
-    codegen.emitSource(f2, "F2", new java.io.PrintWriter(System.out))
-    codegen.emitSource(f3, "F3", new java.io.PrintWriter(System.out))
-    codegen.emitSource(f4, "F4", new java.io.PrintWriter(System.out))
+    override val codegen = new ScalaGenEffect with ScalaGenStreamDSL with ScalaGenMathOps with ScalaGenNumericOps { val IR: self.type = self }
   }
+  // Import the dsl functions and the methods to compile and generate code.
+  import concreteProg._
 
-  val f = concreteProg.compile(concreteProg.f)
-  println("scaling 1.0 :: 2.0 :: 3.0 :: Nil by a factor of 42: ")
-  new streams.ListInput(1 :: 2 :: 3 :: Nil, f(Stream[Int] map({x: Int => 2.5 * x})) print)
 
-  println
-  val g = concreteProg.compile(concreteProg.g)
-  println("\nscaling 1.0 :: 2.0 :: 3.0 :: Nil by a factor of 1.0: ")
-  new streams.ListInput(1 :: 2 :: 3 :: Nil, g(Stream[Int] map({x: Int => 2.5 * x})) print)
-
-  println
-  val h = concreteProg.compile(concreteProg.h)
-  println("\n2^x for x = 1.0 :: 2.0 :: 3.0 :: Nil: ")
-  new streams.ListInput(1.0 :: 2.0 :: 3.0 :: Nil, h(Stream[Double]) print)
-
-  println
-  val f4 = concreteProg.compile(concreteProg.f4)
-  println("\n'2.5*x' for x = 1 :: 2 :: 3 :: Nil: ")
-  new streams.ListInput(1 :: 2 :: 3 :: Nil, f4(Stream[Int] map({x: Int => 2.5 * x})) print)
-
-  println
-  val test = concreteProg.compile(concreteProg.test)
-  println("\n2^x + 3 for x = 1.0 :: 2.0 :: 3.0 :: Nil: ")
+  // ============F=============
   
-  new streams.ListInput(1.0 :: 2.0 :: 3.0 :: Nil, test(Stream[Double]) print)
+  // The function f takes a Stream[Int, Double] and scales it by a factor 42.
+  // Let's compile it so that we can use it in this regular Scala code.
+  val scala_f = compile(dsl_f)
+  
+  // Let's print the generated code to satisfy our curiosity.
+  codegen.emitSource(dsl_f, "F", new java.io.PrintWriter(System.out))
+  
+  // Let's create a Stream[Int, Double] that adds 1.5 to all its elements.
+  val streamAdd = Stream[Int] map({x: Int => x + 1.5})
+  
+  // Let's apply f to streamAdd and finish the Stream with the command to print all elements.
+  val streamAddFPrint = scala_f(streamAdd).print
+  
+  // Let's print the results of passing List(1, 2, 3) through the stream.
+  println("Applying {x => 42 * (x + 1.5)} to List(1, 2, 3):")
+  new streams.ListInput(List(1, 2, 3), streamAddFPrint)
+  println("\n")
+  
+  
+  // ============G=============
+  
+  // The function g takes a Stream[Double, Double] and maps its elements x to 2ˆx.
+  val scala_g = compile(dsl_g)
+  codegen.emitSource(dsl_g, "", new java.io.PrintWriter(System.out))
+  
+  // Let's apply g to a newly created Stream[Double, Double] and print all elements.
+  val streamGPrint = scala_g(Stream[Double]).print
+  
+  println("Applying {x => 2.0ˆx} to List(1.0, 2.0, 3.0):")
+  new streams.ListInput(List(1.0, 2.0, 3.0), streamGPrint)
+  println("\n")
+  
+  
+  
 
-  println
 }
 
 
