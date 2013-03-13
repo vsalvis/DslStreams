@@ -38,6 +38,8 @@ class DSLTest extends FlatSpec with ShouldMatchers {
   
   def getCode(nr: Int): String = {
     val output = new java.io.StringWriter
+    // Reinstantiate Prog to avoid generation of continuous variable names that would
+    // make generated function code depend on order of code generation.
     val concreteProg = new Prog with EffectExp with StreamDSLExp with StreamDSLOpt with MathOpsExp with NumericOpsExp with StringOpsExp with CompileScala { self =>
       override val codegen = new ScalaGenEffect with ScalaGenStreamDSL with ScalaGenMathOps with ScalaGenNumericOps with ScalaGenStringOps { val IR: self.type = self }
     }
@@ -56,7 +58,7 @@ class DSLTest extends FlatSpec with ShouldMatchers {
     output.toString
   }
       
-  val expected: Map[Int, String] = Map(
+  val expectedCode: Map[Int, String] = Map(
       0 -> """((streams.Stream[Int, Double])=>(streams.Stream[Int, Double])) {
 def apply(x0:streams.Stream[Int, Double]): streams.Stream[Int, Double] = {
 val x1 = x0.map(x => x * 42.0)
@@ -81,20 +83,15 @@ x4
 }
 }
 """,
-//TODO this should be merged
       3 -> """((streams.Stream[Double, Double])=>(streams.Stream[Double, Double])) {
 def apply(x0:streams.Stream[Double, Double]): streams.Stream[Double, Double] = {
-val x3 = {x1: (Double) => 
-val x2 = java.lang.Math.pow(2.0,x1)
-x2: Double
+val x8 = {x5: (Double) => 
+val x6 = java.lang.Math.pow(2.0,x5)
+val x7 = x6 + 3.0
+x7: Double
 }
-val x4 = x0.map(x3)
-val x7 = {x5: (Double) => 
-val x6 = x5 + 3.0
-x6: Double
-}
-val x8 = x4.map(x7)
-x8
+val x9 = x0.map(x8)
+x9
 }
 }
 """,
@@ -105,29 +102,29 @@ x3
 }
 }
 """,
-// TODO merged
       5 -> """((streams.Stream[Double, Double])=>(streams.Stream[Double, Double])) {
 def apply(x0:streams.Stream[Double, Double]): streams.Stream[Double, Double] = {
-val x3 = {x1: (Double) => 
-val x2 = java.lang.Math.pow(2.0,x1)
-x2: Double
+val x14 = {x10: (Double) => 
+val x11 = java.lang.Math.pow(2.0,x10)
+val x12 = 2.0 * x11
+val x13 = 3.0 * x12
+x13: Double
 }
-val x4 = x0.map(x3)
-val x6 = x4.map(x => x * 6.0)
-x6
+val x15 = x0.map(x14)
+x15
 }
 }
 """,
       6 -> """((streams.Stream[Double, Double])=>(streams.Stream[Double, Double])) {
 def apply(x0:streams.Stream[Double, Double]): streams.Stream[Double, Double] = {
-val x2 = x0.map(x => x * 126.0)
-val x5 = {x3: (Double) => 
-val x4 = java.lang.Math.pow(2.0,x3)
-x4: Double
+val x12 = {x8: (Double) => 
+val x9 = 126.0 * x8
+val x10 = java.lang.Math.pow(2.0,x9)
+val x11 = 2.0 * x10
+x11: Double
 }
-val x6 = x2.map(x5)
-val x7 = x6.map(x => x * 2.0)
-x7
+val x13 = x0.map(x12)
+x13
 }
 }
 """,
@@ -151,29 +148,64 @@ x3
 }
 """    
   )
-  def getExpected(nr: Int): String = {
+  def getExpectedCode(n: Int): String = {
     "/*****************************************\n" +
     "  Emitting Generated Code                  \n" +
     "*******************************************/\n" +
-    "class Class" + nr + " extends " + expected(nr) +
+    "class Class" + n + " extends " + expectedCode(n) +
     "/*****************************************\n" +
     "  End of Generated Code                  \n" +
     "*******************************************/\n"
   }
+  
+  def getOutput(n: Int): String = {
+    val concreteProg = new Prog with EffectExp with StreamDSLExp with StreamDSLOpt with MathOpsExp with NumericOpsExp with StringOpsExp with CompileScala { self =>
+      override val codegen = new ScalaGenEffect with ScalaGenStreamDSL with ScalaGenMathOps with ScalaGenNumericOps with ScalaGenStringOps { val IR: self.type = self }
+    }
+    import concreteProg._
+    val output = new java.io.StringWriter
+//    n match {
+//        case 0 => compile(t0)
+//        case 1 => compile(t1)
+//        case 2 => compile(t2)
+//        case 3 => compile(t3)
+//        case 4 => compile(t4)
+//        case 5 => compile(t5)
+//        case 6 => compile(t6)
+//        case 7 => compile(t7)
+//        case 8 => compile(t8)
+//    }
+    val t0 = concreteProg.compile(concreteProg.t0)
+    new streams.ListInput(1 :: 2 :: 3 :: Nil, t0(Stream[Int] map({x: Int => 2.5 * x})) printTo(output))
+    println("==out===" + output.toString)
+    ???
+  }
+  def getExpectedOutput(n: Int): String = {
+    ???
+  }
       
-  val table = Table("n", List.range(0, expected.size):_*)
+  val codeTable = Table("n", List.range(0, expectedCode.size):_*)
   
   if (printall) {
-    forAll (table) { (n:Int) =>
+    forAll (codeTable) { (n:Int) =>
       println("%generated: " + n + "%" + getCode(n) + "%")
-      println("%expected:  " + n + "%" + getExpected(n) + "%")
+      println("%expected:  " + n + "%" + getExpectedCode(n) + "%")
     } 
   }
   "All functions" should "generate the expected code" in {
-    forAll (table) { (n:Int) =>
-      getCode(n) should equal (getExpected(n))
+    forAll (codeTable) { (n: Int) =>
+      getCode(n) should equal (getExpectedCode(n))
     }
   }
+  
+//  val outputTable = Table("n", List.range(0, expectedOutput.size):_*)
+//  
+//  "All functions" should "execute correctly" in {
+//    forAll (outputTable) { (n: Int) =>
+//      getOutput(n) should equal (getExpectedOutput(n))
+//    }
+//  }
+
 
 /*  val f = compile(f)
   println("scaling 1.0 :: 2.0 :: 3.0 :: Nil by a factor of 42: ")

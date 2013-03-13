@@ -68,19 +68,25 @@ trait StreamDSLOpt extends StreamDSLExp { this: BaseExp =>
   override def scale[A:Manifest](s: Exp[Stream[A,Double]], k: Exp[Double]) = k match {
     case Const(1.0) => s
     case _ => s match {
-      case Def(Scale(s1, k1)) => super.scale[A](s1, numeric_times(k, k1))
-      case Def(m@Map(s1: Exp[Stream[A, Any]], f: (Any => Exp[Double]))) => {
-//        type tp = m.mB.erasure
-//        val tp = m.mB.erasure
-        super.map[A, Any, Double](s1, (x: Any)  => numeric_times(k, f(x)))(manifest[A], m.mB, manifest[Double]) 
-      }
+      case Def(Scale(s1, k1)) => 
+        super.scale(s1, numeric_times(k, k1))(manifest[A])
+      
+      case Def(m@Map(s1, Def(Lambda(f1,_,_)))) =>
+        // Manifest magic: We cannot tell the compiler the runtime types of m, since they have been erased,
+        // but we still have the manifests to create a map with the correct types. We use Any for the
+        // anonymous function to satisfy the typechecker, the real type is Rep[B]. 
+        super.map(s1, {x: Exp[Any] => numeric_times(k, f1(x))})(manifest[A], m.mB, manifest[Double]) 
+
       case _ => super.scale(s, k)
     }
   }
   
   override def map[A:Manifest, B:Manifest, C:Manifest](s: Exp[Stream[A,B]], f: Exp[B] => Exp[C]) = s match {
-//    case Def(Scale(s1, k)) => super.map(s1, {x => f(k * x)})
-//    case Def(Map(s1, Def(Lambda(f1,_,_)))) => super.map(s1, {x => f(f1(x))})
+    case Def(Scale(s1: Exp[Stream[A, Double]], k)) => 
+      super.map(s1, {x: Rep[Double] => f(numeric_times(k, x).asInstanceOf[Exp[B]])})(manifest[A], manifest[Double], manifest[C])
+      
+    case Def(m@Map(s1, Def(Lambda(f1,_,_)))) => super.map(s1, {x: Exp[Any] => f(f1(x))})(manifest[A], m.mB, manifest[C])
+    
     case _ => super.map(s, f)
   }
 

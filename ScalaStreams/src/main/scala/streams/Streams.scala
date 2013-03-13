@@ -388,6 +388,13 @@ class PrintListOp[A] extends StreamOutput[A] {
   }
 }
 
+class PrintListToWriterOp[A](out: java.io.StringWriter) extends PrintListOp[A] {
+  override def onData(data: A) = {
+    if (started) out.append(" :: ") else started = true
+    out.append("" + data)
+  }
+}
+
 class NamedPrintOp[A] extends StreamOutput[A] {
   var first: Option[A] = None
   

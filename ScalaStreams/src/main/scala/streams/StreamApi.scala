@@ -15,6 +15,8 @@ abstract class Stream[A,B] { self =>
   }
   
   def print = into(new PrintlnOp[B]())
+  def printTo(out: java.io.StringWriter) = into(new PrintListToWriterOp[B](out))
+  
   
   def aggregate() = new Stream[A,List[B]] {
     def into(out: StreamOp[List[B]]) = self.into(new AggregatorOp[B](out))
