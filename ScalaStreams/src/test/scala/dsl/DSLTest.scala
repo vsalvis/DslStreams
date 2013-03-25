@@ -164,25 +164,25 @@ x3
     }
     import concreteProg._
     val output = new java.io.StringWriter
-//    n match {
-//        case 0 => compile(t0)
-//        case 1 => compile(t1)
-//        case 2 => compile(t2)
-//        case 3 => compile(t3)
-//        case 4 => compile(t4)
-//        case 5 => compile(t5)
-//        case 6 => compile(t6)
-//        case 7 => compile(t7)
-//        case 8 => compile(t8)
-//    }
     val t0 = concreteProg.compile(concreteProg.t0)
-    new streams.ListInput(1 :: 2 :: 3 :: Nil, t0(Stream[Int] map({x: Int => 2.5 * x})) printTo(output))
-    println("==out===" + output.toString)
-    ???
+    val t3 = concreteProg.compile(concreteProg.t3)
+    val t8 = concreteProg.compile(concreteProg.t8)
+    n match {
+        case 0 => new streams.ListInput(1 :: 2 :: 3 :: Nil, t0(Stream[Int] map({x: Int => 2.5 * x})) printTo(output))
+        case 1 => new streams.ListInput(1 :: 2 :: 3 :: Nil, t0(Stream[Int] map({x: Int => x % 2})) printTo(output))
+        case 2 => new streams.ListInput(1.0 :: 2.0 :: 3.0 :: Nil, t3(Stream[Double] map({x: Double => x * 2})) printTo(output))
+        case 3 => new streams.ListInput('a' :: 'b' :: 'c' :: Nil, t8(Stream[Char] map({x: Char => x.toInt})) printTo(output))
+        case _ => output.append("No program output defined for " + n)
+    }
+    
+    "List(" + output.toString + ")"
   }
-  def getExpectedOutput(n: Int): String = {
-    ???
-  }
+  val expectedOutput: List[String] = List(
+    List(105.0, 210.0, 315.0),
+    List(42.0, 0.0, 42.0),
+    List(7.0, 19.0, 67.0),
+    List(24444.0, 24696.0, 24948.0)
+  ) map (_.toString)
       
   val codeTable = Table("n", List.range(0, expectedCode.size):_*)
   
@@ -192,51 +192,17 @@ x3
       println("%expected:  " + n + "%" + getExpectedCode(n) + "%")
     } 
   }
-  "All functions" should "generate the expected code" in {
+  "All functions" should "generate the expected code (whitebox tests)" in {
     forAll (codeTable) { (n: Int) =>
       getCode(n) should equal (getExpectedCode(n))
     }
   }
   
-//  val outputTable = Table("n", List.range(0, expectedOutput.size):_*)
-//  
-//  "All functions" should "execute correctly" in {
-//    forAll (outputTable) { (n: Int) =>
-//      getOutput(n) should equal (getExpectedOutput(n))
-//    }
-//  }
-
-
-/*  val f = compile(f)
-  println("scaling 1.0 :: 2.0 :: 3.0 :: Nil by a factor of 42: ")
-  new streams.ListInput(1 :: 2 :: 3 :: Nil, f(Stream[Int] map({x: Int => 2.5 * x})) print)
-
-  println
-  val g = compile(g)
-  println("\nscaling 1.0 :: 2.0 :: 3.0 :: Nil by a factor of 1.0: ")
-  new streams.ListInput(1 :: 2 :: 3 :: Nil, g(Stream[Int] map({x: Int => 2.5 * x})) print)
-
-  println
-  val h = compile(h)
-  println("\n2^x for x = 1.0 :: 2.0 :: 3.0 :: Nil: ")
-  new streams.ListInput(1.0 :: 2.0 :: 3.0 :: Nil, h(Stream[Double]) print)
-
-  println
-  val f4 = compile(f4)
-  println("\n'2.5*x' for x = 1 :: 2 :: 3 :: Nil: ")
-  new streams.ListInput(1 :: 2 :: 3 :: Nil, f4(Stream[Int] map({x: Int => 2.5 * x})) print)
-
-  println
-  val f4 = compile(f4)
-  println("\n'2.5*x' for x = 1 :: 2 :: 3 :: Nil: ")
-  new streams.ListInput(1 :: 2 :: 3 :: Nil, f4(Stream[Int] map({x: Int => 2.5 * x})) print)
-
-  println
-  val test = compile(test)
-  println("\n2^x + 3 for x = 1.0 :: 2.0 :: 3.0 :: Nil: ")
+  val outputTable = Table("n", List.range(0, expectedOutput.size):_*)
   
-  new streams.ListInput(1.0 :: 2.0 :: 3.0 :: Nil, test(Stream[Double]) print)
-
-  println
-  */
+  "All functions" should "execute correctly (blackbox tests)" in {
+    forAll (outputTable) { (n: Int) =>
+      getOutput(n) should equal (expectedOutput(n))
+    }
+  }
 }
