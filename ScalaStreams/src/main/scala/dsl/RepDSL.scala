@@ -1,83 +1,108 @@
-package dsl
-
-import scala.virtualization.lms.common
-import scala.virtualization.lms.common._
-import scala.virtualization.lms.common.Functions
-
-trait RepStreamDSL { this: Base =>
-
-  // Concepts
-  abstract class RepStreamOp {
-    def onData(data: Rep[Int])
-  }
-  class MapOp(f: Rep[Int] => Rep[Int], next: RepStreamOp) extends RepStreamOp {
-    def onData(data: Rep[Int]) = next.onData(f(data))
-  }
-  class PrintlnOp extends RepStreamOp {
-    def onData(data: Rep[Int]) = println(data)
-  }
-  class ListInput(input: Rep[List[Int]], stream: RepStreamOp) {
-    input foreach stream.onData
-  }
-  
-//  //API
+//package dsl
+//
+//import scala.virtualization.lms.common
+//import scala.virtualization.lms.common._
+//import scala.virtualization.lms.common.Functions
+//
+//trait RepStreamOps { this: Base =>
+//
+//  
 //  object RepStream {
-//    def apply = new RepStream {
-//      def into(out: RepStreamOp): RepStreamOp = out
-//    }
+//    def apply(input: Rep[List[Int]])(implicit pos: SourceContext) = stream_input(input)
+//  }
+//
+//  implicit def varToRepStreamOps(x: Var[RepStream]) = new RepStreamOpsCls(readVar(x))
+//  implicit def repToRepStreamOps(a: Rep[RepStream]) = new RepStreamOpsCls(a)
+//  
+//  class RepStreamOpsCls(s: Rep[RepStream]) {
+//    def map(f: Rep[Int] => Rep[Int]) = stream_map(s, f)
+//    def print() = stream_print(s)
 //  }
 //  
-//  abstract class RepStream { self =>
-//    def into(out: RepStreamOp): RepStreamOp
-//    def into[C](next: RepStream): RepStream = new RepStream {
-//      def into(out: RepStreamOp) = self.into(next.into(out))
-//    }
-//    
-//    def print = into(new PrintlnOp)
-//    
-//    def map(f: Rep[Int] => Rep[Int]) = new RepStream {
-//      def into(out: RepStreamOp) = self.into(new MapOp(f, out))
-//    }
+//  def stream_input(input: Rep[List[Int]]): Rep[RepStream]
+//  def stream_map(s: Rep[RepStream], f: Rep[Int] => Rep[Int]): Rep[RepStream]
+//  def stream_print(s: Rep[RepStream]): Rep[RepStream]
+//}
+//
+//trait RepStreamExp extends RepStreamOps with EffectExp with VariablesExp {
+//  case class StreamInput(input: Rep[List[Int]]) extends Def[RepStream]
+//  case class StreamMap(s: Exp[RepStream], x: Sym[Int], block: Block[Int]) extends Def[RepStream]
+//  case class StreamPrint(s: Exp[RepStream]) extends Def[RepStream]
+//  
+//  def stream_input(input: Rep[List[Int]])(implicit pos: SourceContext) = StreamInput(input)
+//  def stream_map(s: Exp[RepStream], f: Exp[Int] => Exp[Int])(implicit pos: SourceContext) = {
+//    val a = fresh[Int]
+//    val b = reifyEffects(f(a))
+//    reflectEffect(StreamMap(s, a, b), summarizeEffects(b).star)
 //  }
-}
-
-trait RepStreamDSLExp extends RepStreamDSL with FunctionsExp with MathOpsExp with NumericOpsExp with NumericOpsExpOpt { this: BaseExp =>
-  
-}
-
-trait ScalaGenRepStreamDSL extends ScalaGenBase with ScalaGenFunctions {
-  val IR: BaseExp with RepStreamDSLExp
-  import IR._
-
-  override def emitNode(sym: Sym[Any], node: Def[Any]): Unit = node match {
-    case _ => super.emitNode(sym, node)
-  }
-}
-
-// Usage Example: First, we write a program in the DSL, importing the necessary LMS primitives.
-trait Prog { this: Base with RepStreamDSL with MathOps with NumericOps =>
-  def dsl_f(): Unit = {
-    new ListInput(List(unit(1), unit(2), unit(3)), (RepStream.apply) map({x => x * unit(2)}) map({x => x + unit(3)}) print)
-  }
-}
-
-object Usage extends App {
-  // We then instantiate the program, so that we can generate regular Scala code from the DSL code.
-  val concreteProg = new Prog with EffectExp with RepStreamDSLExp /* with StreamDSLOpt */ with CompileScala { self =>
-    override val codegen = new ScalaGenEffect with ScalaGenRepStreamDSL with ScalaGenMathOps with ScalaGenNumericOps { val IR: self.type = self }
-  }
-  // Import the dsl functions and the methods to compile and generate code.
-  import concreteProg._
-
-
-  // ============F=============
-  
-  // The function f takes a Stream[Int, Double] and scales it by a factor 42.
-  // Let's compile it so that we can use it in this regular Scala code.
-  val scala_f = compile(dsl_f)
-  
-  // Let's print the generated code to satisfy our curiosity.
-  codegen.emitSource(dsl_f, "F", new java.io.PrintWriter(System.out))
-  
-  scala_f()
-}  
+//  def stream_print(s: Exp[RepStream])(implicit pos: SourceContext) = StreamPrint(s)
+//
+//  
+//  override def mirror[A:Manifest](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = {
+//    (e match {
+//      case StreamInput(l) => stream_input(f(l))
+//      case _ => super.mirror(e,f)
+//    }).asInstanceOf[Exp[A]] // why??
+//  }
+//  
+//  override def syms(e: Any): List[Sym[Any]] = e match {
+//    case StreamMap(s, x, body) => syms(a) ::: syms(body)
+//    case _ => super.syms(e)
+//  }
+//
+//  override def boundSyms(e: Any): List[Sym[Any]] = e match {
+//    case StreamMap(s, x, body) => x :: effectSyms(body)
+//    case _ => super.boundSyms(e)
+//  }
+//
+//  override def symsFreq(e: Any): List[(Sym[Any], Double)] = e match {
+//    case StreamMap(s, x, body) => freqNormal(s):::freqHot(body)
+//    case _ => super.symsFreq(e)
+//  }  
+//}
+//
+//trait RepStreamOpsExpOpt extends RepStreamOpsExp {}
+//
+//trait ScalaGenRepStreamOps extends GenericNestedCodegen with ScalaGenEffect {
+//  val IR: RepStreamOpsExp
+//  import IR._
+//
+//  override def emitNode(sym: Sym[Any], rhs: Def[Any]) = rhs match {
+//    case StreamInput(input) =>
+//    case StreamMap(s, x, block) =>
+//    case StreamPrint(s) =>
+//
+//    
+////    case ListNew(xs) => emitValDef(sym, "List(" + (xs map {quote}).mkString(",") + ")")
+////    case ListMap(l,x,blk) => 
+////      stream.println("val " + quote(sym) + " = " + quote(l) + ".map{")
+////      stream.println(quote(x) + " => ")
+////      emitBlock(blk)
+////      stream.println(quote(getBlockResult(blk)))
+////      stream.println("}")
+//    case _ => super.emitNode(sym, rhs)
+//  }
+//}
+//  
+//  /////////// List 
+////  //API
+////  object RepStream {
+////    def apply = new RepStream {
+////      def into(out: RepStreamOp): RepStreamOp = out
+////    }
+////  }
+////  
+////  abstract class RepStream { self =>
+////    def into(out: RepStreamOp): RepStreamOp
+////    def into[C](next: RepStream): RepStream = new RepStream {
+////      def into(out: RepStreamOp) = self.into(next.into(out))
+////    }
+////    
+////    def print = into(new PrintlnOp)
+////    
+////    def map(f: Rep[Int] => Rep[Int]) = new RepStream {
+////      def into(out: RepStreamOp) = self.into(new MapOp(f, out))
+////    }
+////  }
+//}
+//
