@@ -43,17 +43,16 @@ class DSLTest extends FlatSpec with ShouldMatchers {
     val concreteProg = new Prog with EffectExp with StreamDSLExp with StreamDSLOpt with MathOpsExp with NumericOpsExp with StringOpsExp with CompileScala { self =>
       override val codegen = new ScalaGenEffect with ScalaGenStreamDSL with ScalaGenMathOps with ScalaGenNumericOps with ScalaGenStringOps { val IR: self.type = self }
     }
-    import concreteProg._
     nr match {
-        case 0 => codegen.emitSource(t0, "Class" + nr, new java.io.PrintWriter(output))
-        case 1 => codegen.emitSource(t1, "Class" + nr, new java.io.PrintWriter(output))
-        case 2 => codegen.emitSource(t2, "Class" + nr, new java.io.PrintWriter(output))
-        case 3 => codegen.emitSource(t3, "Class" + nr, new java.io.PrintWriter(output))
-        case 4 => codegen.emitSource(t4, "Class" + nr, new java.io.PrintWriter(output))
-        case 5 => codegen.emitSource(t5, "Class" + nr, new java.io.PrintWriter(output))
-        case 6 => codegen.emitSource(t6, "Class" + nr, new java.io.PrintWriter(output))
-        case 7 => codegen.emitSource(t7, "Class" + nr, new java.io.PrintWriter(output))
-        case 8 => codegen.emitSource(t8, "Class" + nr, new java.io.PrintWriter(output))
+        case 0 => concreteProg.codegen.emitSource(concreteProg.t0, "Class" + nr, new java.io.PrintWriter(output))
+        case 1 => concreteProg.codegen.emitSource(concreteProg.t1, "Class" + nr, new java.io.PrintWriter(output))
+        case 2 => concreteProg.codegen.emitSource(concreteProg.t2, "Class" + nr, new java.io.PrintWriter(output))
+        case 3 => concreteProg.codegen.emitSource(concreteProg.t3, "Class" + nr, new java.io.PrintWriter(output))
+        case 4 => concreteProg.codegen.emitSource(concreteProg.t4, "Class" + nr, new java.io.PrintWriter(output))
+        case 5 => concreteProg.codegen.emitSource(concreteProg.t5, "Class" + nr, new java.io.PrintWriter(output))
+        case 6 => concreteProg.codegen.emitSource(concreteProg.t6, "Class" + nr, new java.io.PrintWriter(output))
+        case 7 => concreteProg.codegen.emitSource(concreteProg.t7, "Class" + nr, new java.io.PrintWriter(output))
+        case 8 => concreteProg.codegen.emitSource(concreteProg.t8, "Class" + nr, new java.io.PrintWriter(output))
     }
     output.toString
   }
@@ -158,25 +157,20 @@ x3
     "*******************************************/\n"
   }
   
-  def getOutput(n: Int): String = {
-    val concreteProg = new Prog with EffectExp with StreamDSLExp with StreamDSLOpt with MathOpsExp with NumericOpsExp with StringOpsExp with CompileScala { self =>
-      override val codegen = new ScalaGenEffect with ScalaGenStreamDSL with ScalaGenMathOps with ScalaGenNumericOps with ScalaGenStringOps { val IR: self.type = self }
-    }
-    import concreteProg._
-    val output = new java.io.StringWriter
-    val t0 = concreteProg.compile(concreteProg.t0)
-    val t3 = concreteProg.compile(concreteProg.t3)
-    val t8 = concreteProg.compile(concreteProg.t8)
-    n match {
-        case 0 => new streams.ListInput(1 :: 2 :: 3 :: Nil, t0(Stream[Int] map({x: Int => 2.5 * x})) printTo(output))
-        case 1 => new streams.ListInput(1 :: 2 :: 3 :: Nil, t0(Stream[Int] map({x: Int => x % 2})) printTo(output))
-        case 2 => new streams.ListInput(1.0 :: 2.0 :: 3.0 :: Nil, t3(Stream[Double] map({x: Double => x * 2})) printTo(output))
-        case 3 => new streams.ListInput('a' :: 'b' :: 'c' :: Nil, t8(Stream[Char] map({x: Char => x.toInt})) printTo(output))
-        case _ => output.append("No program output defined for " + n)
-    }
-    
-    "List(" + output.toString + ")"
+  val concreteProg = new Prog with EffectExp with StreamDSLExp with StreamDSLOpt with MathOpsExp with NumericOpsExp with StringOpsExp with CompileScala { self =>
+    override val codegen = new ScalaGenEffect with ScalaGenStreamDSL with ScalaGenMathOps with ScalaGenNumericOps with ScalaGenStringOps { val IR: self.type = self }
   }
+  val t0 = concreteProg.compile(concreteProg.t0)
+  val t3 = concreteProg.compile(concreteProg.t3)
+  val t8 = concreteProg.compile(concreteProg.t8)
+  val output: List[String] = List(
+      { out: java.io.StringWriter => new streams.ListInput(1 :: 2 :: 3 :: Nil, t0(Stream[Int] map({x: Int => 2.5 * x})) printTo(out)) },
+      { out: java.io.StringWriter => new streams.ListInput(1 :: 2 :: 3 :: Nil, t0(Stream[Int] map({x: Int => x % 2})) printTo(out)) },
+      { out: java.io.StringWriter => new streams.ListInput(1.0 :: 2.0 :: 3.0 :: Nil, t3(Stream[Double] map({x: Double => x * 2})) printTo(out)) },
+      { out: java.io.StringWriter => new streams.ListInput('a' :: 'b' :: 'c' :: Nil, t8(Stream[Char] map({x: Char => x.toInt})) printTo(out)) }
+  ).map {f => val out = new java.io.StringWriter; f(out); "List(" + out.toString + ")"}
+
+  
   val expectedOutput: List[String] = List(
     List(105.0, 210.0, 315.0),
     List(42.0, 0.0, 42.0),
@@ -202,7 +196,7 @@ x3
   
   "All functions" should "execute correctly (blackbox tests)" in {
     forAll (outputTable) { (n: Int) =>
-      getOutput(n) should equal (expectedOutput(n))
+      output(n) should equal (expectedOutput(n))
     }
   }
 }
