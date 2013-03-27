@@ -5,41 +5,6 @@ import scala.virtualization.lms.common._
 import scala.virtualization.lms.common.Functions
 import streams._
 
-////StreamOps
-//abstract class StreamOp[Rep[A]] {
-//  def onData(data: Rep[A])
-//}
-//class MapOp[Rep[A], Rep[B]](f: Rep[A] => Rep[B], next: StreamOp[Rep[B]]) extends StreamOp[Rep[A]] {
-//  def onData(data: Rep[A]) = next.onData(f(data))
-//}
-//class PrintlnOp[Rep[A]] extends StreamOp[Rep[A]] {
-//  def onData(data: Rep[A]) = println(data)
-//}
-//class ListInput[Rep[A]](input: List[A], stream: StreamOp[Rep[A]]) {
-//  input foreach stream.onData
-//}
-//
-//
-////API
-//object Stream {
-//  def apply[A] = new Stream[A,A] {
-//    def into(out: StreamOp[A]): StreamOp[A] = out
-//  }
-//}
-//
-//abstract class Stream[A,B] { self =>
-//  def into(out: StreamOp[B]): StreamOp[A]
-//  def into[C](next: Stream[B, C]): Stream[A, C] = new Stream[A, C] {
-//    def into(out: StreamOp[C]) = self.into(next.into(out))
-//  }
-//  
-//  def print = into(new PrintlnOp[B]())
-//  
-//  def map[C](f: B => C) = new Stream[A,C] {
-//    def into(out: StreamOp[C]) = self.into(new MapOp(f, out))
-//  }
-//}
-
 // Concepts and concrete syntax
 trait StreamDSL { this: Base =>
 
