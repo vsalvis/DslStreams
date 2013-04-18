@@ -1,108 +1,88 @@
-//package dsl
-//
-//import scala.virtualization.lms.common
-//import scala.virtualization.lms.common._
-//import scala.virtualization.lms.common.Functions
-//
-//trait RepStreamOps { this: Base =>
-//
-//  
-//  object RepStream {
-//    def apply(input: Rep[List[Int]])(implicit pos: SourceContext) = stream_input(input)
-//  }
-//
-//  implicit def varToRepStreamOps(x: Var[RepStream]) = new RepStreamOpsCls(readVar(x))
-//  implicit def repToRepStreamOps(a: Rep[RepStream]) = new RepStreamOpsCls(a)
-//  
-//  class RepStreamOpsCls(s: Rep[RepStream]) {
-//    def map(f: Rep[Int] => Rep[Int]) = stream_map(s, f)
-//    def print() = stream_print(s)
-//  }
-//  
-//  def stream_input(input: Rep[List[Int]]): Rep[RepStream]
-//  def stream_map(s: Rep[RepStream], f: Rep[Int] => Rep[Int]): Rep[RepStream]
-//  def stream_print(s: Rep[RepStream]): Rep[RepStream]
-//}
-//
-//trait RepStreamExp extends RepStreamOps with EffectExp with VariablesExp {
-//  case class StreamInput(input: Rep[List[Int]]) extends Def[RepStream]
-//  case class StreamMap(s: Exp[RepStream], x: Sym[Int], block: Block[Int]) extends Def[RepStream]
-//  case class StreamPrint(s: Exp[RepStream]) extends Def[RepStream]
-//  
-//  def stream_input(input: Rep[List[Int]])(implicit pos: SourceContext) = StreamInput(input)
-//  def stream_map(s: Exp[RepStream], f: Exp[Int] => Exp[Int])(implicit pos: SourceContext) = {
-//    val a = fresh[Int]
-//    val b = reifyEffects(f(a))
-//    reflectEffect(StreamMap(s, a, b), summarizeEffects(b).star)
-//  }
-//  def stream_print(s: Exp[RepStream])(implicit pos: SourceContext) = StreamPrint(s)
-//
-//  
-//  override def mirror[A:Manifest](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = {
-//    (e match {
-//      case StreamInput(l) => stream_input(f(l))
-//      case _ => super.mirror(e,f)
-//    }).asInstanceOf[Exp[A]] // why??
-//  }
-//  
-//  override def syms(e: Any): List[Sym[Any]] = e match {
-//    case StreamMap(s, x, body) => syms(a) ::: syms(body)
-//    case _ => super.syms(e)
-//  }
-//
-//  override def boundSyms(e: Any): List[Sym[Any]] = e match {
-//    case StreamMap(s, x, body) => x :: effectSyms(body)
-//    case _ => super.boundSyms(e)
-//  }
-//
-//  override def symsFreq(e: Any): List[(Sym[Any], Double)] = e match {
-//    case StreamMap(s, x, body) => freqNormal(s):::freqHot(body)
-//    case _ => super.symsFreq(e)
-//  }  
-//}
-//
-//trait RepStreamOpsExpOpt extends RepStreamOpsExp {}
-//
-//trait ScalaGenRepStreamOps extends GenericNestedCodegen with ScalaGenEffect {
-//  val IR: RepStreamOpsExp
-//  import IR._
-//
-//  override def emitNode(sym: Sym[Any], rhs: Def[Any]) = rhs match {
-//    case StreamInput(input) =>
-//    case StreamMap(s, x, block) =>
-//    case StreamPrint(s) =>
-//
+package dsl
+
+import scala.virtualization.lms.common
+import scala.virtualization.lms.common._
+import scala.virtualization.lms.common.Functions
+import scala.virtualization.lms.util.OverloadHack
+import java.io.PrintWriter
+import java.io.StringWriter
+import java.io.FileOutputStream
+import scala.reflect.SourceContext
+
+trait RepStreamOps extends Variables with While
+  with NumericOps with OrderingOps with IfThenElse
+  with MiscOps with EmbeddedControls with Equal {
+  
+  abstract class RepStreamOp[A] {
+    def onData(data: Rep[A])
+//    def flush
+  }
+
+  class RepMapOp[A, B](f: Rep[A] => Rep[B], next: RepStreamOp[B]) extends RepStreamOp[A] {
+    def onData(data: Rep[A]) = next.onData(f(data))
+    
+//    def flush = next.flush
+  }
+
+  class RepFilterOp[A](p: Rep[A] => Rep[Boolean], next: RepStreamOp[A]) extends RepStreamOp[A] {
+    def onData(data: Rep[A]) = if (p(data)) next.onData(data)
+    
+//    def flush = next.flush
+  }
+  
+  class RepPrintOp[A]() extends RepStreamOp[A] {
+    def onData(data: Rep[A]) = println(data)
+  }
+  
+//  class ListInput[A](l: List[Rep[A]], next: StreamOp[A]) {
 //    
-////    case ListNew(xs) => emitValDef(sym, "List(" + (xs map {quote}).mkString(",") + ")")
-////    case ListMap(l,x,blk) => 
-////      stream.println("val " + quote(sym) + " = " + quote(l) + ".map{")
-////      stream.println(quote(x) + " => ")
-////      emitBlock(blk)
-////      stream.println(quote(getBlockResult(blk)))
-////      stream.println("}")
-//    case _ => super.emitNode(sym, rhs)
 //  }
-//}
-//  
-//  /////////// List 
-////  //API
-////  object RepStream {
-////    def apply = new RepStream {
-////      def into(out: RepStreamOp): RepStreamOp = out
-////    }
-////  }
-////  
-////  abstract class RepStream { self =>
-////    def into(out: RepStreamOp): RepStreamOp
-////    def into[C](next: RepStream): RepStream = new RepStream {
-////      def into(out: RepStreamOp) = self.into(next.into(out))
-////    }
-////    
-////    def print = into(new PrintlnOp)
-////    
-////    def map(f: Rep[Int] => Rep[Int]) = new RepStream {
-////      def into(out: RepStreamOp) = self.into(new MapOp(f, out))
-////    }
-////  }
-//}
-//
+}
+
+trait RepStreamProg extends RepStreamOps with NumericOps
+  with OrderingOps with PrimitiveOps with Equal
+  with Structs with MiscOps with ArrayOps with LiftVariables with OverloadHack
+  with ListOps
+  {
+
+
+  def test1() = {
+    val m = new RepMapOp[Int, Int]({x: Rep[Int] => x * unit(2)}, new RepMapOp[Int, Int]({x: Rep[Int] => x + unit(1)}, new RepPrintOp[Int]))
+
+    m.onData(unit(0))
+    m.onData(unit(1))
+    m.onData(unit(2))
+    m.onData(unit(3))
+  }
+
+}
+
+class TestRepStreamOps extends FileDiffSuite {
+
+  val prefix = "test-out/"
+
+  def testRepStream1 = {
+    withOutFile(prefix+"generator-simple"){
+       new RepStreamProg with NumericOpsExp
+        with OrderingOpsExp with PrimitiveOpsExp with EqualExp
+        with StructExp with StructExpOptCommon with ArrayOpsExp
+        with MiscOpsExp with ListOpsExp with ScalaCompile{ self =>     /* MyScalaCompile -> ScalaCompile*/
+
+        val printWriter = new java.io.PrintWriter(System.out)
+
+        //test1: first "loop"
+        val codegen = new ScalaGenGeneratorOps with ScalaGenNumericOps
+          with ScalaGenOrderingOps with ScalaGenPrimitiveOps with ScalaGenEqual
+          with ScalaGenArrayOps with ScalaGenStruct with ScalaGenMiscOps
+          with ScalaGenVariables { val IR: self.type = self }
+
+        codegen.emitSource2(test1 _ , "test1", printWriter)
+        val testc1 = compile2(test1)
+        testc1()
+
+      }
+    }
+//    assertFileEqualsCheck(prefix+"generator-simple")
+  }
+}
+
