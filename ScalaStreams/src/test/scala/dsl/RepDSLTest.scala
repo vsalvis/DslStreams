@@ -53,8 +53,11 @@ trait RepStreamProg extends RepStreamOps with NumericOps
   
   def test4(i: Rep[Int]) = {
     testRepStream(new RepDropOp[Int](2, new RepPrintOp[Int]))
-//    testRepStream(new RepDropWhileOp[Int]({x: Rep[Int] => x > unit(3)}, new RepPrintOp[Int]))
-//    testRepStream(new RepDropWhileOp[Int]({x: Rep[Int] => x < unit(3)}, new RepPrintOp[Int]))
+    testRepStream(new RepDropWhileOp[Int]({x: Rep[Int] => x > unit(3)}, new RepPrintOp[Int]))
+    testRepStream(new RepDropWhileOp[Int]({x: Rep[Int] => x < unit(3)}, new RepPrintOp[Int]))
+    testRepStream(new RepTakeOp[Int](2, new RepPrintOp[Int]))
+    testRepStream(new RepTakeWhileOp[Int]({x: Rep[Int] => x > unit(3)}, new RepPrintOp[Int]))
+    testRepStream(new RepTakeWhileOp[Int]({x: Rep[Int] => x < unit(3)}, new RepPrintOp[Int]))
   }
 
 
@@ -411,6 +414,8 @@ trait OrderingOpsExpOpt extends OrderingOpsExp {
   }
 }
 
+
+
 class TestRepStreamOps extends FileDiffSuite {
 
   val prefix = "test-out/"
@@ -418,7 +423,7 @@ class TestRepStreamOps extends FileDiffSuite {
   def testRepStream1 = {
     withOutFile(prefix+"stream1"){
        new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
-        with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
+        with OrderingOpsExp with OrderingOpsExpOpt with BooleanOpsExpOpt with ScalaCompile{ self =>
 
         val printWriter = new java.io.PrintWriter(System.out)
 

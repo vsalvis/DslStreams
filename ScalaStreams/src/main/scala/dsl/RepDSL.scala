@@ -10,7 +10,7 @@ import java.io.FileOutputStream
 import scala.reflect.SourceContext
 
 trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
-   with EmbeddedControls {
+   with Variables with EmbeddedControls {
   
   abstract class RepStreamOp[A] {
     def onData(data: Rep[A])
@@ -84,13 +84,15 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     }
   }
 
-/*  class RepDropWhileOp[A](p: Rep[A] => Rep[Boolean], next: RepStreamOp[A]) extends RepStreamOp[A] {
+  class RepDropWhileOp[A](p: Rep[A] => Rep[Boolean], next: RepStreamOp[A]) extends RepStreamOp[A] {
     var dropping = unit(true)
     def onData(data: Rep[A]) = {
-      println(dropping && !p(data))
-      if (dropping && !p(data)) {
-        dropping = unit(false)
-      }
+      dropping = dropping && p(data)
+// TODO LMS bug?      
+//      if (dropping && !p(data)) {
+//        dropping = unit(false)
+//      }
+      
       if (!dropping) {
         next.onData(data)
       }
@@ -101,7 +103,7 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
       next.flush
     }
   }
-  
+
   class RepTakeOp[A](n: Int, next: RepStreamOp[A]) extends RepStreamOp[A] {
     var num = n
     def onData(data: Rep[A]) = {
@@ -116,13 +118,12 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
       next.flush
     }
   }
-  */
-/*  
+
   class RepTakeWhileOp[A](p: Rep[A] => Rep[Boolean], next: RepStreamOp[A]) extends RepStreamOp[A] {
-    var taking = true
+    var taking = unit(true)
     def onData(data: Rep[A]) = {
       if (taking && !p(data)) {
-        taking = false
+        taking = unit(false)
       }
       if (taking) {
         next.onData(data)
@@ -130,10 +131,10 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     }
     
     def flush = {
-      taking = true
+      taking = unit(true)
       next.flush
     }
-  }*/
+  }
 /*
   class RepPrependOp[A](list: List[Rep[A]], next: RepStreamOp[A]) extends RepStreamOp[A] {
     list foreach next.onData
@@ -281,11 +282,33 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
   }
 }
 
+trait BooleanOpsExpOpt extends BooleanOpsExp {
+  override def boolean_negate(lhs: Exp[Boolean])(implicit pos: SourceContext) : Exp[Boolean] = lhs match {
+    case Const(b) => unit(!b)
+    case _ => super.boolean_negate(lhs)
+  }
+  override def boolean_and(lhs: Exp[Boolean], rhs: Exp[Boolean])(implicit pos: SourceContext) : Exp[Boolean] = (lhs, rhs) match {
+    case (Const(true), b) => b
+    case (Const(false), b) => unit(false)
+    case (b, Const(true)) => b
+    case (b, Const(false)) => unit(false)
+    case _ => super.boolean_and(lhs, rhs)
+  }
+  override def boolean_or(lhs: Exp[Boolean], rhs: Exp[Boolean])(implicit pos: SourceContext) : Exp[Boolean] = (lhs, rhs) match {
+    case (Const(true), b) => unit(true)
+    case (Const(false), b) => b
+    case (b, Const(true)) => unit(true)
+    case (b, Const(false)) => b
+    case _ => super.boolean_or(lhs, rhs)
+  }
+}
+
 trait RepStreamOpsExp extends RepStreamOps 
-    with IfThenElseExp with IfThenElseExpOpt with BooleanOpsExp with EqualExpBridge
+    with IfThenElseExp with IfThenElseExpOpt with BooleanOpsExp with BooleanOpsExpOpt with EqualExpBridge
     with MiscOpsExp
 
-trait ScalaGenRepStreamOps extends ScalaGenIfThenElse with ScalaGenMiscOps with ScalaGenBooleanOps {
+trait ScalaGenRepStreamOps extends ScalaGenIfThenElse with ScalaGenMiscOps with ScalaGenBooleanOps
+{
   val IR: RepStreamOpsExp
 //  import IR._
 //  
