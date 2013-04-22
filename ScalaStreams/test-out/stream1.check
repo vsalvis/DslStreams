@@ -1,0 +1,16 @@
+/*****************************************
+  Emitting Generated Code                  
+*******************************************/
+class test1 extends ((Int)=>(Unit)) {
+def apply(x0:Int): Unit = {
+val x1 = println(6)
+val x2 = println(8)
+()
+}
+}
+/*****************************************
+  End of Generated Code                  
+*******************************************/
+compilation: ok
+6
+8
