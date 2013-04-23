@@ -44,7 +44,7 @@ trait RepStreamProg extends RepStreamOps with NumericOps
   }
   
   def test3(i: Rep[Int]) = {
-    testRepStream(new RepMapOp[Int, Int]({x: Rep[Int] => unit(2) * x}, new RepPrintOp[Int]))
+    testRepStream(new RepMapOp[Int, Int]({x: Rep[Int] => 2 * x}, new RepPrintOp[Int]))
     testRepStream(new RepFilterOp[Int]({x: Rep[Int] => x > unit(3)}, new RepPrintOp[Int]))
     testRepStream(new RepReduceOp[Int]({(x, y) => x + y}, new RepPrintOp[Int]))
     testRepStream(new RepFoldOp[Int, Int]({(x, y) => x + y}, unit(1), new RepPrintOp[Int]))
@@ -75,28 +75,20 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     testRepStream(new RepDuplicateOp[Int](new RepMapOp[Int, Int]({x => x + unit(10)}, new RepPrintOp[Int]), new RepMapOp[Int, Int]({x => x}, new RepPrintOp[Int])))
     testRepStream(new RepAggregatorOp[Int](new RepPrintOp[List[Rep[Int]]]))
   }
+  
+  def test7(i: Rep[Int]) = {
+    // TODO can remove unused Variables/stores?
+    val (s1, s2) = RepStreamFunctions.zipWith[Int, Int](new RepPrintOp[(Int, Int)])
+    testRepStream(s1)
+    testRepStream(new RepMapOp[Int, Int]({x => x + unit(1)}, s2))
+
+    testRepStream(new RepSplitMergeOp[Int, Int, Int]({s1 => new RepMapOp[Int, Int]({x => x}, s1)},
+        {s2 => new RepMapOp[Int, Int]({x => x + 10}, s2)},
+        new RepMapOp[(Int, Int), (Int, Boolean)]({x => (x._1 + x._2, x._1 < x._2)}, new RepPrintOp[(Int, Boolean)])))
+    
+  }
+
 /* 
-  val op23 = new AssertEqualsOp[Map[Int, List[Int]]](Map(1 -> (1 :: Nil)) :: Map(1 -> (1 :: Nil), 0 -> (0 :: Nil))
-        :: Map(1 -> (1 :: 1 :: Nil), 0 -> (0 :: Nil)) :: Nil, "GroupByStreamOp")
-    new ListInput(1 :: 0 :: 1 :: Nil, new GroupByStreamOp[Int, Int](x => x, op23))
-    op23.verify()
-
-    val op5 = new AssertEqualsOp(list zip (list map (_ + 1)), "zipWith")
-    val (a1, b1) = StreamFunctions.zipWith[Int, Int](op5)
-    new ListInput(list, a1)
-    new ListInput(list map (_ + 1), b1)
-    op5.verify()
-
-    val op6 = new AssertEqualsOp((list, (list map (_ + 1))).zipped map (_ + _), "zipWith map")
-    val (a2, b2) = StreamFunctions.zipWith[Int, Int](new MapOp({x => x._1 + x._2}, op6))
-    new ListInput(list, a2)
-    new ListInput(list map (_ + 1), b2)
-    op6.verify()
-
-    val op23d = new AssertEqualsOp(list map { -_}, "SplitOp")
-    new ListInput(list, new SplitMergeOp[Int, Int, Int]((x) => new MapOp(x => x, x), (x) => new MapOp(-2 * _, x), new MapOp((x) => x._1 + x._2, op23d)))
-    op23d.verify()
- 
     val op23e = new AssertEqualsOp((0::0::0::0::0::Nil) :: (0::1::2::3::4::Nil) :: (0::2::4::6::8::Nil) ::  Nil, "MultiSplitOp")
     new ListInput(0 :: 1 :: 2 :: Nil, new MultiSplitOp[Int, Int](5, (next, index) => new MapOp(x => x * index, next), op23e))
     op23e.verify()
@@ -486,5 +478,24 @@ class TestRepStreamOps extends FileDiffSuite {
       }
     }
     assertFileEqualsCheck(prefix+"stream6")
+  }
+  
+  def testRepStream7 = {
+    withOutFile(prefix+"stream7"){
+       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+        with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
+
+        val printWriter = new java.io.PrintWriter(System.out)
+
+        val codegen = new ScalaGenRepStreamOps with ScalaGenNumericOps
+          with ScalaGenOrderingOps { val IR: self.type = self }
+
+        codegen.emitSource(test7 _ , "test7", printWriter)
+        val test = compile(test7)
+        test(2)
+
+      }
+    }
+    assertFileEqualsCheck(prefix+"stream7")
   }
 }

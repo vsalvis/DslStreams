@@ -10,7 +10,7 @@ import java.io.FileOutputStream
 import scala.reflect.SourceContext
 
 trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
-   with Variables with ListOps with EmbeddedControls {
+   with Variables with ListOps with EmbeddedControls with TupleOps {
   
   abstract class RepStreamOp[A] {
     def onData(data: Rep[A])
@@ -227,9 +227,9 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     def flush = next.flush
   }
   
-/*  class RepSplitMergeOp[A, B, C](first: RepStreamOp[B] => RepStreamOp[A],
-      second: RepStreamOp[C] => RepStreamOp[A], next: RepStreamOp[Pair[Rep[B], Rep[C]]]) extends RepStreamOp[A] {
-    val (firstZip, secondZip) = StreamFunctions.zipWith(next)
+  class RepSplitMergeOp[A, B: Manifest, C: Manifest](first: RepStreamOp[B] => RepStreamOp[A],
+      second: RepStreamOp[C] => RepStreamOp[A], next: RepStreamOp[(B, C)]) extends RepStreamOp[A] {
+    val (firstZip, secondZip) = RepStreamFunctions.zipWith(next)
     val (firstStream, secondStream) = (first(firstZip), second(secondZip))
       
     def onData(data: Rep[A]) = {
@@ -242,7 +242,6 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
       secondStream.flush
     }
   }
-  */
   
   /*
   class RepMultiSplitOp[A, B](num: Int, streams: (RepStreamOp[B], Int) => RepStreamOp[A], next: RepStreamOp[List[Rep[B]]]) extends RepStreamOp[A] {
@@ -255,7 +254,111 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
   }
   
   */
-  /* next:  StreamFunctions */
+  
+  object RepStreamFunctions {
+  
+    // TODO Map in LMS?
+/*    def equiJoin[A, B, K] (keyFunA: A => K, keyFunB: B => K, next: StreamOp[List[(A, B)]]): (StreamOp[A], StreamOp[B]) = {
+      val aMap = new scala.collection.mutable.HashMap[K, List[A]]
+      val bMap = new scala.collection.mutable.HashMap[K, List[B]]
+  
+      class JoinOp[C](map: scala.collection.mutable.HashMap[K, List[C]], keyFun: C => K) extends StreamOp[C] {
+        def onData(data: C) = {
+          val key = keyFun(data)
+          map += ((key, data :: (map.get(key) match {
+            case None => Nil
+            case Some(list) => list
+          })))
+          (aMap.get(key), bMap.get(key)) match {
+            case (Some(as), Some(bs)) => next.onData(for (a <- as; b <- bs) yield (a, b))
+            case _ =>
+          }
+        }
+        
+        def flush = {
+          map.clear
+          next.flush // Will flush next twice if both input streams are flushed
+        }
+      }
+      
+      (new JoinOp(aMap, keyFunA), new JoinOp(bMap, keyFunB))
+    }
+    */
+    
+    
+    def zipWith[A: Manifest, B: Manifest] (next: RepStreamOp[(A, B)]): (RepStreamOp[A], RepStreamOp[B]) = {
+      var leftBuffer: Var[List[A]] = var_new(List[A]())
+      var rightBuffer: Var[List[B]] = var_new(List[B]())
+      var leftWaitingForFlush = false
+      var rightWaitingForFlush = false
+    
+    val left = new RepStreamOp[A] {
+      def onData(data: Rep[A]) = {
+        if (!leftWaitingForFlush) {
+          if (rightBuffer.isEmpty) {
+            leftBuffer = leftBuffer ++ List(data)
+          } else {
+            val right = rightBuffer.head
+            rightBuffer = rightBuffer.tail
+            next.onData((data, right))
+          }
+        }
+      }
+      
+      def flush = {
+        leftBuffer = List()
+        if (leftWaitingForFlush) {
+          leftWaitingForFlush = false
+            next.flush
+        } else {
+          rightWaitingForFlush = true
+        }
+      }
+    }
+    
+    val right = new RepStreamOp[B] {
+      def onData(data: Rep[B]) = {
+        if (!rightWaitingForFlush) {
+          if (leftBuffer.isEmpty) {
+            rightBuffer = rightBuffer ++ List(data)
+          } else {
+            val left = leftBuffer.head
+            leftBuffer = leftBuffer.tail
+            next.onData((left, data))
+          }
+        }
+      }
+  
+      def flush = {
+        rightBuffer = List()
+        if (rightWaitingForFlush) {
+          rightWaitingForFlush = false
+            next.flush
+        } else {
+          leftWaitingForFlush = true
+        }
+      }
+      } 
+      
+      (left, right)
+    }
+/*    
+    def multiZipWith[A] (num: Int, next: StreamOp[List[A]]): List[StreamOp[A]] = num match {
+      case x if x <= 0 => Nil
+      case 1 => new MapOp((x: A) => x :: Nil, next) :: Nil
+      case 2 => {
+        val (a, b) = zipWith[A, A](new MapOp({x => x._1 :: x._2 :: Nil}, next))
+        a :: b :: Nil
+      }
+      case x => {
+        val (a, b) = zipWith[List[A], List[A]](new MapOp({x => x._1 ::: x._2}, next))
+        multiZipWith(x / 2 + x % 2, a) ::: multiZipWith(x / 2, b)
+      }
+    }
+
+  */
+  }
+  /* next:  StreamInput/Output */
   
 // ----------
   abstract class RepStreamOutput[A] extends RepStreamOp[A] {
@@ -309,11 +412,29 @@ trait BooleanOpsExpOpt extends BooleanOpsExp {
   }
 }
 
+trait ListOpsExpOpt2 extends ListOpsExpOpt {
+  override def list_isEmpty[A:Manifest](xs: Exp[List[A]])(implicit pos: SourceContext) : Exp[Boolean] = xs match {
+    case Def(ListNew(Seq())) => unit(true)
+    case Def(ListNew(_)) => unit(false)
+    case _ => super.list_isEmpty(xs)
+  }
+  override def list_head[A:Manifest](xs: Exp[List[A]])(implicit pos: SourceContext): Exp[A] = xs match {
+    case Def(ListNew(Seq(y, _*))) => y
+    case _ => super.list_head(xs)
+  }
+  //TODO get types right
+  override def list_tail[A:Manifest](xs: Exp[List[A]])(implicit pos: SourceContext): Exp[List[A]] = xs match {
+    case Def(ListNew(Seq(y, ys@_*))) => list_new(ys)
+    case _ => super.list_tail(xs)
+  } 
+}
+
 trait RepStreamOpsExp extends RepStreamOps 
     with IfThenElseExp with IfThenElseExpOpt with BooleanOpsExp with BooleanOpsExpOpt with EqualExpBridge
-    with MiscOpsExp with ListOpsExp with ListOpsExpOpt
+    with MiscOpsExp with ListOpsExp with ListOpsExpOpt with ListOpsExpOpt2 with TupleOpsExp with VariablesExp with VariablesExpOpt
 
-trait ScalaGenRepStreamOps extends ScalaGenIfThenElse with ScalaGenMiscOps with ScalaGenBooleanOps with ScalaGenListOps
+trait ScalaGenRepStreamOps extends ScalaGenIfThenElse with ScalaGenMiscOps with ScalaGenBooleanOps
+    with ScalaGenListOps with ScalaGenTupleOps with ScalaGenVariables
 {
   val IR: RepStreamOpsExp
 //  import IR._
