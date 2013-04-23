@@ -5,6 +5,17 @@ class test2 extends ((Int)=>(Unit)) {
 def apply(x0:Int): Unit = {
 val x1 = println(6)
 val x2 = println(8)
+val x3 = println(10)
+val x4 = x0 * 2
+val x5 = x4 + 1
+val x6 = x5 + 1
+val x7 = x6 > 4
+val x10 = if (x7) {
+val x8 = println(x6)
+()
+} else {
+()
+}
 ()
 }
 }
@@ -14,3 +25,5 @@ val x2 = println(8)
 compilation: ok
 6
 8
+10
+12

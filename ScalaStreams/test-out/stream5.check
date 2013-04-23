@@ -10,15 +10,17 @@ val x4 = println(1)
 val x5 = println(2)
 val x6 = println(3)
 val x7 = println(4)
-val x8 = println(5)
+val x8 = println(x0)
 val x9 = println(0)
 val x10 = println(1)
 val x11 = println(2)
 val x12 = println(3)
 val x13 = println(4)
-val x14 = println(0)
-val x15 = println(1)
-val x16 = println(2)
+val x14 = println(x0)
+val x15 = println(6)
+val x16 = println(0)
+val x17 = println(1)
+val x18 = println(2)
 ()
 }
 }
@@ -39,6 +41,8 @@ compilation: ok
 2
 3
 4
+5
+6
 0
 1
 2

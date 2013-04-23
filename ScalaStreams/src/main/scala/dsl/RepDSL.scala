@@ -147,6 +147,8 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     }
   }
   
+  // TODO is this Queue ok? what if the data comes in dynamically?
+  // test5 seems to show it's working, but why?
   class RepOffsetOp[A](n: Int, next: RepStreamOp[A]) extends RepStreamOp[A] {
     val buffer = new scala.collection.mutable.Queue[Rep[A]]
     
@@ -218,8 +220,9 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     }
   }
   
-  class RepAggregatorOp[A](next: RepStreamOp[List[Rep[A]]]) extends RepStreamOp[A] {
-    var list: Rep[List[Rep[A]]] = List() 
+  // TODO better to use List[A] or List[Rep[A]]?
+  class RepAggregatorOp[A: Manifest](next: RepStreamOp[List[A]]) extends RepStreamOp[A] {
+    var list: Rep[List[A]] = List() 
     def onData(data: Rep[A]) = {
       list = data :: list
       next.onData(list)
@@ -286,6 +289,7 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     */
     
     
+    //TODO use regular scala.collections.mutable.Queue like OffsetOp?
     def zipWith[A: Manifest, B: Manifest] (next: RepStreamOp[(A, B)]): (RepStreamOp[A], RepStreamOp[B]) = {
       var leftBuffer: Var[List[A]] = var_new(List[A]())
       var rightBuffer: Var[List[B]] = var_new(List[B]())
@@ -342,23 +346,22 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
       
       (left, right)
     }
-/*    
-    def multiZipWith[A] (num: Int, next: StreamOp[List[A]]): List[StreamOp[A]] = num match {
+    
+      // TODO better to use List[A] or List[Rep[A]]?
+    def multiZipWith[A: Manifest] (num: Int, next: RepStreamOp[List[A]]): List[RepStreamOp[A]] = num match {
       case x if x <= 0 => Nil
-      case 1 => new MapOp((x: A) => x :: Nil, next) :: Nil
+      case 1 => new RepMapOp((x: Rep[A]) => List(x), next) :: Nil
       case 2 => {
-        val (a, b) = zipWith[A, A](new MapOp({x => x._1 :: x._2 :: Nil}, next))
+        val (a, b) = zipWith[A, A](new RepMapOp({x => List(x._1, x._2)}, next))
         a :: b :: Nil
       }
       case x => {
-        val (a, b) = zipWith[List[A], List[A]](new MapOp({x => x._1 ::: x._2}, next))
+        val (a, b) = zipWith[List[A], List[A]](new RepMapOp({x => x._1 ++ x._2}, next))
         multiZipWith(x / 2 + x % 2, a) ::: multiZipWith(x / 2, b)
       }
     }
-
-  */
   }
-  /* next:  StreamInput/Output */
+  /* TODO next:  StreamInput/Output */
   
 // ----------
   abstract class RepStreamOutput[A] extends RepStreamOp[A] {

@@ -15,77 +15,84 @@ trait RepStreamProg extends RepStreamOps with NumericOps
   with OrderingOps with OverloadHack
   {
 
-
-  def test1(i: Rep[Int]) = {
-    val m = new RepMapOp[Int, Int]({x: Rep[Int] => x * unit(2)}, new RepMapOp[Int, Int]({x: Rep[Int] => x + unit(1)}, new RepMapOp[Int, Int]({x: Rep[Int] => x + unit(1)}, new RepFilterOp[Int]({x: Rep[Int] => x > unit(4)}, new RepPrintOp[Int]))))
-
-    m.onData(unit(0))
-    m.onData(unit(1))
-    m.onData(unit(2))
-    m.onData(unit(3))
-  }
-
-  def test2(i: Rep[Int]) = {
-    val m = RepStream[Int] map ({x: Rep[Int] => x * unit(2)}) map ({x: Rep[Int] => x + unit(1)}) map({x: Rep[Int] => x + unit(1)}) filter ({x: Rep[Int] => x > unit(4)}) print
-
-    m.onData(unit(0))
-    m.onData(unit(1))
-    m.onData(unit(2))
-    m.onData(unit(3))
-  }
-  
-  def testRepStream(m: RepStreamOp[Int]) = {
+  def testRepStream(i: Rep[Int], m: RepStreamOp[Int]) = {
     m.onData(unit(0))
     m.onData(unit(1))
     m.onData(unit(2))
     m.onData(unit(3))
     m.onData(unit(4))
-    m.onData(unit(5))
+    m.onData(i)
+  }
+
+  def test1(i: Rep[Int]) = {
+    testRepStream(i, new RepMapOp[Int, Int]({x: Rep[Int] => x * unit(2)}, new RepMapOp[Int, Int]({x: Rep[Int] => x + unit(1)}, new RepMapOp[Int, Int]({x: Rep[Int] => x + unit(1)}, new RepFilterOp[Int]({x: Rep[Int] => x > unit(4)}, new RepPrintOp[Int])))))
+  }
+
+  def test2(i: Rep[Int]) = {
+    testRepStream(i, RepStream[Int] map ({x: Rep[Int] => x * unit(2)}) map ({x: Rep[Int] => x + unit(1)}) map({x: Rep[Int] => x + unit(1)}) filter ({x: Rep[Int] => x > unit(4)}) print)
   }
   
   def test3(i: Rep[Int]) = {
-    testRepStream(new RepMapOp[Int, Int]({x: Rep[Int] => 2 * x}, new RepPrintOp[Int]))
-    testRepStream(new RepFilterOp[Int]({x: Rep[Int] => x > unit(3)}, new RepPrintOp[Int]))
-    testRepStream(new RepReduceOp[Int]({(x, y) => x + y}, new RepPrintOp[Int]))
-    testRepStream(new RepFoldOp[Int, Int]({(x, y) => x + y}, unit(1), new RepPrintOp[Int]))
-    testRepStream(new RepFlatMapOp[Int, Int]({x => x :: x :: Nil}, new RepPrintOp[Int]))
+    testRepStream(i, new RepMapOp[Int, Int]({x: Rep[Int] => 2 * x}, new RepPrintOp[Int]))
+    testRepStream(i, new RepFilterOp[Int]({x: Rep[Int] => x > unit(3)}, new RepPrintOp[Int]))
+    testRepStream(i, new RepReduceOp[Int]({(x, y) => x + y}, new RepPrintOp[Int]))
+    testRepStream(i, new RepFoldOp[Int, Int]({(x, y) => x + y}, unit(1), new RepPrintOp[Int]))
+    testRepStream(i, new RepFlatMapOp[Int, Int]({x => x :: x :: Nil}, new RepPrintOp[Int]))
   }
   
   def test4(i: Rep[Int]) = {
-    testRepStream(new RepDropOp[Int](2, new RepPrintOp[Int]))
-    testRepStream(new RepDropWhileOp[Int]({x: Rep[Int] => x > unit(3)}, new RepPrintOp[Int]))
-    testRepStream(new RepDropWhileOp[Int]({x: Rep[Int] => x < unit(3)}, new RepPrintOp[Int]))
-    testRepStream(new RepTakeOp[Int](2, new RepPrintOp[Int]))
-    testRepStream(new RepTakeWhileOp[Int]({x: Rep[Int] => x > unit(3)}, new RepPrintOp[Int]))
-    testRepStream(new RepTakeWhileOp[Int]({x: Rep[Int] => x < unit(3)}, new RepPrintOp[Int]))
+    testRepStream(i, new RepDropOp[Int](2, new RepPrintOp[Int]))
+    testRepStream(i, new RepDropWhileOp[Int]({x: Rep[Int] => x > unit(3)}, new RepPrintOp[Int]))
+    testRepStream(i, new RepDropWhileOp[Int]({x: Rep[Int] => x < unit(3)}, new RepPrintOp[Int]))
+    testRepStream(i, new RepTakeOp[Int](2, new RepPrintOp[Int]))
+    testRepStream(i, new RepTakeWhileOp[Int]({x: Rep[Int] => x > unit(3)}, new RepPrintOp[Int]))
+    testRepStream(i, new RepTakeWhileOp[Int]({x: Rep[Int] => x < unit(3)}, new RepPrintOp[Int]))
   }
 
   def test5(i: Rep[Int]) = {
-    testRepStream(new RepPrependOp[Int](unit(-2) :: unit(-1) :: Nil, new RepPrintOp[Int]))
-    testRepStream(new RepOffsetOp[Int](1, new RepPrintOp[Int]))
-    testRepStream(new RepOffsetOp[Int](3, new RepPrintOp[Int]))
+    testRepStream(i, new RepPrependOp[Int](unit(-2) :: unit(-1) :: Nil, new RepPrintOp[Int]))
+    val s = new RepOffsetOp[Int](1, new RepPrintOp[Int])
+    testRepStream(i, s)
+    s.onData(unit(6))
+    s.onData(unit(7))
+    testRepStream(i, new RepOffsetOp[Int](3, new RepPrintOp[Int]))
   }
 
   def test6(i: Rep[Int]) = {
 // TODO why can't I use IfThenElse here?
-    //testRepStream(new RepGroupByOp[Int, Int]({x => x * unit(3)}, {x => if (x < unit(10)) { new RepMapOp[Int, Int]({x => -x}, new RepPrintOp[Int]) } else { new RepPrintOp[Int] }}))
-    testRepStream(new RepGroupByOp[Int, Int]({x => 2 * x}, {k => new RepMapOp[Int, Int]({x => x + unit(10) * k}, new RepPrintOp[Int])}))
+    //testRepStream(i, new RepGroupByOp[Int, Int]({x => x * unit(3)}, {x => if (x < unit(10)) { new RepMapOp[Int, Int]({x => -x}, new RepPrintOp[Int]) } else { new RepPrintOp[Int] }}))
+    testRepStream(i, new RepGroupByOp[Int, Int]({x => 2 * x}, {k => new RepMapOp[Int, Int]({x => x + unit(10) * k}, new RepPrintOp[Int])}))
 // TODO map in LMS?    
-    //testRepStream(new RepGroupByStreamOp[Int, Int]({x => 2 * x}, new RepPrintOp[Map[Rep[Int], List[Rep[Int]]]]))
-    testRepStream(new RepDuplicateOp[Int](new RepMapOp[Int, Int]({x => x + unit(10)}, new RepPrintOp[Int]), new RepMapOp[Int, Int]({x => x}, new RepPrintOp[Int])))
-    testRepStream(new RepAggregatorOp[Int](new RepPrintOp[List[Rep[Int]]]))
+    //testRepStream(i, new RepGroupByStreamOp[Int, Int]({x => 2 * x}, new RepPrintOp[Map[Rep[Int], List[Rep[Int]]]]))
+    testRepStream(i, new RepDuplicateOp[Int](new RepMapOp[Int, Int]({x => x + unit(10)}, new RepPrintOp[Int]), new RepMapOp[Int, Int]({x => x}, new RepPrintOp[Int])))
+    testRepStream(i, new RepAggregatorOp[Int](new RepPrintOp[List[Int]]))
   }
   
   def test7(i: Rep[Int]) = {
     // TODO can remove unused Variables/stores?
     val (s1, s2) = RepStreamFunctions.zipWith[Int, Int](new RepPrintOp[(Int, Int)])
-    testRepStream(s1)
-    testRepStream(new RepMapOp[Int, Int]({x => x + unit(1)}, s2))
+    testRepStream(i, s1)
+    testRepStream(i, new RepMapOp[Int, Int]({x => x + unit(1)}, s2))
 
-    testRepStream(new RepSplitMergeOp[Int, Int, Int]({s1 => new RepMapOp[Int, Int]({x => x}, s1)},
+    testRepStream(i, new RepSplitMergeOp[Int, Int, Int]({s1 => new RepMapOp[Int, Int]({x => x}, s1)},
         {s2 => new RepMapOp[Int, Int]({x => x + 10}, s2)},
         new RepMapOp[(Int, Int), (Int, Boolean)]({x => (x._1 + x._2, x._1 < x._2)}, new RepPrintOp[(Int, Boolean)])))
-    
+
+    val l0 = RepStreamFunctions.multiZipWith[Int](0, new RepPrintOp[List[Int]])
+    println(unit(l0.length == 0))
+    val l1 = RepStreamFunctions.multiZipWith[Int](1, new RepPrintOp[List[Int]])
+    println(unit(l1.length == 1))
+    testRepStream(i, l1(0))
+    val l2 = RepStreamFunctions.multiZipWith[Int](2, new RepPrintOp[List[Int]])
+    println(unit(l2.length == 2))
+    testRepStream(i, l2(0))
+    testRepStream(i, new RepMapOp[Int, Int]({x => x + unit(1)}, l2(1)))
+    val l3 = RepStreamFunctions.multiZipWith[Int](3, new RepPrintOp[List[Int]])
+    println(unit(l3.length == 3))
+    testRepStream(i, l3(0))
+    testRepStream(i, new RepMapOp[Int, Int]({x => x + unit(1)}, l3(1)))
+    testRepStream(i, new RepMapOp[Int, Int]({x => x + unit(2)}, l3(2)))
+
   }
 
 /* 
@@ -378,7 +385,7 @@ class TestRepStreamOps extends FileDiffSuite {
 
         codegen.emitSource(test1 _ , "test1", printWriter)
         val test = compile(test1)
-        test(2)
+        test(5)
 
       }
     }
@@ -397,7 +404,7 @@ class TestRepStreamOps extends FileDiffSuite {
 
         codegen.emitSource(test2 _ , "test2", printWriter)
         val test = compile(test2)
-        test(2)
+        test(5)
 
       }
     }
@@ -416,7 +423,7 @@ class TestRepStreamOps extends FileDiffSuite {
 
         codegen.emitSource(test3 _ , "test3", printWriter)
         val test = compile(test3)
-        test(2)
+        test(5)
 
       }
     }
@@ -435,7 +442,7 @@ class TestRepStreamOps extends FileDiffSuite {
 
         codegen.emitSource(test4 _ , "test4", printWriter)
         val test = compile(test4)
-        test(2)
+        test(5)
 
       }
     }
@@ -454,7 +461,7 @@ class TestRepStreamOps extends FileDiffSuite {
 
         codegen.emitSource(test5 _ , "test5", printWriter)
         val test = compile(test5)
-        test(2)
+        test(5)
 
       }
     }
@@ -473,7 +480,7 @@ class TestRepStreamOps extends FileDiffSuite {
 
         codegen.emitSource(test6 _ , "test6", printWriter)
         val test = compile(test6)
-        test(2)
+        test(5)
 
       }
     }
@@ -492,7 +499,7 @@ class TestRepStreamOps extends FileDiffSuite {
 
         codegen.emitSource(test7 _ , "test7", printWriter)
         val test = compile(test7)
-        test(2)
+        test(5)
 
       }
     }

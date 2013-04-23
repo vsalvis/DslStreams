@@ -16,61 +16,151 @@ val x13 = List(0,1,2,3)
 x2 = x13
 val x16 = List(0,1,2,3,4)
 x2 = x16
-val x19 = List(0,1,2,3,4,5)
+val x19 = List(0,1,2,3,4,x0)
 x2 = x19
-val x21 = List(1,2,3,4,5)
+val x21 = List(1,2,3,4,x0)
 x2 = x21
 val x23 = (0,1)
 val x24 = println(x23)
-val x25 = List(2,3,4,5)
+val x25 = List(2,3,4,x0)
 x2 = x25
 val x27 = (1,2)
 val x28 = println(x27)
-val x29 = List(3,4,5)
+val x29 = List(3,4,x0)
 x2 = x29
 val x31 = (2,3)
 val x32 = println(x31)
-val x33 = List(4,5)
+val x33 = List(4,x0)
 x2 = x33
 val x35 = (3,4)
 val x36 = println(x35)
-val x18 = List(5)
+val x18 = List(x0)
 x2 = x18
 val x38 = (4,5)
 val x39 = println(x38)
 x2 = x1
-val x41 = (5,6)
-val x42 = println(x41)
-var x43: scala.collection.immutable.List[Int] = x1
+val x40 = x0 + 1
+val x42 = (x0,x40)
+val x43 = println(x42)
 var x44: scala.collection.immutable.List[Int] = x1
-x43 = x4
-x43 = x1
-val x48 = (10,true)
-val x49 = println(x48)
+var x45: scala.collection.immutable.List[Int] = x1
+x44 = x4
+x44 = x1
+val x49 = (10,true)
+val x50 = println(x49)
 val x6 = List(1)
-x43 = x6
-x43 = x1
-val x53 = (12,true)
-val x54 = println(x53)
+x44 = x6
+x44 = x1
+val x54 = (12,true)
+val x55 = println(x54)
 val x9 = List(2)
-x43 = x9
-x43 = x1
-val x58 = (14,true)
-val x59 = println(x58)
+x44 = x9
+x44 = x1
+val x59 = (14,true)
+val x60 = println(x59)
 val x12 = List(3)
-x43 = x12
-x43 = x1
-val x63 = (16,true)
-val x64 = println(x63)
+x44 = x12
+x44 = x1
+val x64 = (16,true)
+val x65 = println(x64)
 val x15 = List(4)
-x43 = x15
-x43 = x1
-val x68 = (18,true)
-val x69 = println(x68)
-x43 = x18
-x43 = x1
-val x73 = (20,true)
-val x74 = println(x73)
+x44 = x15
+x44 = x1
+val x69 = (18,true)
+val x70 = println(x69)
+x44 = x18
+x44 = x1
+val x72 = x0 + 10
+val x75 = x0 + x72
+val x76 = x0 < x72
+val x77 = (x75,x76)
+val x78 = println(x77)
+val x79 = println(true)
+val x80 = println(true)
+val x81 = println(x4)
+val x82 = println(x6)
+val x83 = println(x9)
+val x84 = println(x12)
+val x85 = println(x15)
+val x86 = println(x18)
+var x87: scala.collection.immutable.List[Int] = x1
+var x88: scala.collection.immutable.List[Int] = x1
+val x89 = println(true)
+x87 = x4
+x87 = x7
+x87 = x10
+x87 = x13
+x87 = x16
+x87 = x19
+x87 = x21
+val x97 = println(x7)
+x87 = x25
+val x99 = List(1,2)
+val x100 = println(x99)
+x87 = x29
+val x102 = List(2,3)
+val x103 = println(x102)
+x87 = x33
+val x105 = List(3,4)
+val x106 = println(x105)
+x87 = x18
+val x108 = List(4,5)
+val x109 = println(x108)
+x87 = x1
+val x111 = List(x0,x40)
+val x112 = println(x111)
+var x113: scala.collection.immutable.List[scala.collection.immutable.List[Int]] = x1
+var x114: scala.collection.immutable.List[scala.collection.immutable.List[Int]] = x1
+var x115: scala.collection.immutable.List[Int] = x1
+var x116: scala.collection.immutable.List[Int] = x1
+val x117 = println(true)
+x115 = x4
+x115 = x7
+x115 = x10
+x115 = x13
+x115 = x16
+x115 = x19
+x115 = x21
+val x125 = List(x7)
+x113 = x125
+x115 = x25
+val x129 = List(x7,x99)
+x113 = x129
+x115 = x29
+val x133 = List(x7,x99,x102)
+x113 = x133
+x115 = x33
+val x137 = List(x7,x99,x102,x105)
+x113 = x137
+x115 = x18
+val x141 = List(x7,x99,x102,x105,x108)
+x113 = x141
+x115 = x1
+val x145 = List(x7,x99,x102,x105,x108,x111)
+x113 = x145
+val x147 = List(x99,x102,x105,x108,x111)
+x113 = x147
+val x150 = println(x10)
+val x151 = List(x102,x105,x108,x111)
+x113 = x151
+val x154 = List(1,2,3)
+val x155 = println(x154)
+val x156 = List(x105,x108,x111)
+x113 = x156
+val x159 = List(2,3,4)
+val x160 = println(x159)
+val x162 = List(x108,x111)
+x113 = x162
+val x165 = List(3,4,5)
+val x166 = println(x165)
+val x144 = List(x111)
+x113 = x144
+val x170 = List(4,5,6)
+val x171 = println(x170)
+x113 = x1
+val x172 = x0 + 2
+val x176 = List(x0,x40,x172)
+val x177 = println(x176)
 ()
 }
 }
@@ -90,3 +180,25 @@ compilation: ok
 (16,true)
 (18,true)
 (20,true)
+true
+true
+List(0)
+List(1)
+List(2)
+List(3)
+List(4)
+List(5)
+true
+List(0, 1)
+List(1, 2)
+List(2, 3)
+List(3, 4)
+List(4, 5)
+List(5, 6)
+true
+List(0, 1, 2)
+List(1, 2, 3)
+List(2, 3, 4)
+List(3, 4, 5)
+List(4, 5, 6)
+List(5, 6, 7)
