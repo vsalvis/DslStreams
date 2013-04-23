@@ -60,51 +60,27 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     testRepStream(new RepTakeWhileOp[Int]({x: Rep[Int] => x < unit(3)}, new RepPrintOp[Int]))
   }
 
+  def test5(i: Rep[Int]) = {
+    testRepStream(new RepPrependOp[Int](unit(-2) :: unit(-1) :: Nil, new RepPrintOp[Int]))
+    testRepStream(new RepOffsetOp[Int](1, new RepPrintOp[Int]))
+    testRepStream(new RepOffsetOp[Int](3, new RepPrintOp[Int]))
+  }
 
+  def test6(i: Rep[Int]) = {
+// TODO why can't I use IfThenElse here?
+    //testRepStream(new RepGroupByOp[Int, Int]({x => x * unit(3)}, {x => if (x < unit(10)) { new RepMapOp[Int, Int]({x => -x}, new RepPrintOp[Int]) } else { new RepPrintOp[Int] }}))
+    testRepStream(new RepGroupByOp[Int, Int]({x => 2 * x}, {k => new RepMapOp[Int, Int]({x => x + unit(10) * k}, new RepPrintOp[Int])}))
+// TODO map in LMS?    
+    //testRepStream(new RepGroupByStreamOp[Int, Int]({x => 2 * x}, new RepPrintOp[Map[Rep[Int], List[Rep[Int]]]]))
+    testRepStream(new RepDuplicateOp[Int](new RepMapOp[Int, Int]({x => x + unit(10)}, new RepPrintOp[Int]), new RepMapOp[Int, Int]({x => x}, new RepPrintOp[Int])))
+    testRepStream(new RepAggregatorOp[Int](new RepPrintOp[List[Rep[Int]]]))
+  }
 /* 
-    val op10 = new AssertEqualsOp(list drop 1, "DropOp 1")
-    new ListInput(list, new DropOp[Int](1, op10))
-    op10.verify()
+  val op23 = new AssertEqualsOp[Map[Int, List[Int]]](Map(1 -> (1 :: Nil)) :: Map(1 -> (1 :: Nil), 0 -> (0 :: Nil))
+        :: Map(1 -> (1 :: 1 :: Nil), 0 -> (0 :: Nil)) :: Nil, "GroupByStreamOp")
+    new ListInput(1 :: 0 :: 1 :: Nil, new GroupByStreamOp[Int, Int](x => x, op23))
+    op23.verify()
 
-    val op11 = new AssertEqualsOp(list drop 0, "DropOp 0")
-    new ListInput(list, new DropOp[Int](0, op11))
-    op11.verify()
-    
-    val op12 = new AssertEqualsOp(list dropWhile (_ < 2), "DropWhileOp < 2")
-    new ListInput(list, new DropWhileOp[Int](_ < 2, op12))
-    op12.verify()
-    
-    val op13 = new AssertEqualsOp(list dropWhile (_ > 2), "DropWhileOp > 2")
-    new ListInput(list, new DropWhileOp[Int](_ > 2, op13))
-    op13.verify()
-
-    val op14 = new AssertEqualsOp(list take 0, "TakeOp 0")
-    new ListInput(list, new TakeOp[Int](0, op14))
-    op14.verify()
-    
-    val op15 = new AssertEqualsOp(list takeWhile (_ < 2), "TakeWhileOp < 2")
-    new ListInput(list, new TakeWhileOp[Int](_ < 2, op15))
-    op15.verify()
-    
-    val op16 = new AssertEqualsOp(list takeWhile (_ > 2), "TakeWhileOp > 2")
-    new ListInput(list, new TakeWhileOp[Int](_ > 2, op16))
-    op16.verify()
-
-    val op17 = new AssertEqualsOp(-1 :: 0 :: list, "PrependOp")
-    new ListInput(list, new PrependOp[Int](-1 :: 0 :: Nil, op17))
-    op17.verify()
-    
-    val op20 = new AssertEqualsOp[Int](list take 3, "OffsetOp")
-    new ListInput(list, new OffsetOp[Int](1, op20))
-    op20.verify()
-
-    val op21 = new AssertEqualsOp[Int](1 :: 1 :: Nil, "GroupByOp 1")
-    val op22 = new AssertEqualsOp[Int](0 :: Nil, "GroupByOp 2")
-    var n = 0;
-    new ListInput(1 :: 0 :: 1 :: Nil, new GroupByOp[Int, Int](x => x, x => if (n == 0) { n = 1; op21 } else op22))
-    op21.verify()
-    op22.verify()
-    
     val op5 = new AssertEqualsOp(list zip (list map (_ + 1)), "zipWith")
     val (a1, b1) = StreamFunctions.zipWith[Int, Int](op5)
     new ListInput(list, a1)
@@ -116,17 +92,6 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     new ListInput(list, a2)
     new ListInput(list map (_ + 1), b2)
     op6.verify()
-   
-    val op23 = new AssertEqualsOp[Map[Int, List[Int]]](Map(1 -> (1 :: Nil)) :: Map(1 -> (1 :: Nil), 0 -> (0 :: Nil))
-        :: Map(1 -> (1 :: 1 :: Nil), 0 -> (0 :: Nil)) :: Nil, "GroupByStreamOp")
-    new ListInput(1 :: 0 :: 1 :: Nil, new GroupByStreamOp[Int, Int](x => x, op23))
-    op23.verify()
-
-    val op23b = new AssertEqualsOp(list, "DuplicateOp 1")
-    val op23c = new AssertEqualsOp(list, "DuplicateOp 2")
-    new ListInput(list, new DuplicateOp[Int](op23b, op23c))
-    op23b.verify()
-    op23c.verify()
 
     val op23d = new AssertEqualsOp(list map { -_}, "SplitOp")
     new ListInput(list, new SplitMergeOp[Int, Int, Int]((x) => new MapOp(x => x, x), (x) => new MapOp(-2 * _, x), new MapOp((x) => x._1 + x._2, op23d)))
@@ -141,21 +106,9 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     new ListInput(list, a3)
     new ListInput(0 :: 2 :: 1 :: 3 :: 4 :: 1 :: Nil, b3)
     op24.verify()
-    
-    // With synchronization
-    
-    print("synchronized equiJoin? ")
-    val op25 = new AssertEqualsOp[List[(Int, Int)]](((2, 2) :: Nil) :: ((1,1) :: Nil) :: ((3,3) :: Nil) :: ((4,4) :: Nil) :: ((1,1) :: (1,1) :: Nil) :: Nil, "synchronized equiJoin", true)
-    val (a4, b4) = StreamFunctions.equiJoin[Int, Int, Int](x => x, x => x, op25)
-    val synch = new StreamSynchronizer[Int]
-    val (a5, b5) = (synch.getSynchronizedStream(a4), synch.getSynchronizedStream(b4))
-    new ListInput(list, a5)
-    new ListInput(0 :: 2 :: 1 :: 3 :: 4 :: 1 :: Nil, b5)
-    a5.flush
-    // op25 is verified on flush, "Success" has to be printed
-    
-    // Test Flush: only tests that flush is passed through
-    
+*/    
+
+/*  // Test Flush: only tests that flush is passed through
     object FlushTest {
       var ctr = 0
     }
@@ -274,7 +227,8 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     zipWithFlushTest.verifyEnd
 
     println("StreamOp Tests SUCCESSFUL")
-    
+ */
+/*
     val op29 = new AssertEqualsOp[Int](3 :: 4 :: Nil, "API 1")
     new ListInput(1 :: 2 :: 3 :: Nil, Stream[Int] map {_ + 1} filter {_ > 2} into op29)
     op29.verify()
@@ -494,5 +448,43 @@ class TestRepStreamOps extends FileDiffSuite {
       }
     }
     assertFileEqualsCheck(prefix+"stream4")
+  }
+  
+  def testRepStream5 = {
+    withOutFile(prefix+"stream5"){
+       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+        with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
+
+        val printWriter = new java.io.PrintWriter(System.out)
+
+        val codegen = new ScalaGenRepStreamOps with ScalaGenNumericOps
+          with ScalaGenOrderingOps { val IR: self.type = self }
+
+        codegen.emitSource(test5 _ , "test5", printWriter)
+        val test = compile(test5)
+        test(2)
+
+      }
+    }
+    assertFileEqualsCheck(prefix+"stream5")
+  }
+  
+  def testRepStream6 = {
+    withOutFile(prefix+"stream6"){
+       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+        with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
+
+        val printWriter = new java.io.PrintWriter(System.out)
+
+        val codegen = new ScalaGenRepStreamOps with ScalaGenNumericOps
+          with ScalaGenOrderingOps { val IR: self.type = self }
+
+        codegen.emitSource(test6 _ , "test6", printWriter)
+        val test = compile(test6)
+        test(2)
+
+      }
+    }
+    assertFileEqualsCheck(prefix+"stream6")
   }
 }

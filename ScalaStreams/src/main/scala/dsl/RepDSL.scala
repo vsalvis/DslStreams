@@ -10,7 +10,7 @@ import java.io.FileOutputStream
 import scala.reflect.SourceContext
 
 trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
-   with Variables with EmbeddedControls {
+   with Variables with ListOps with EmbeddedControls {
   
   abstract class RepStreamOp[A] {
     def onData(data: Rep[A])
@@ -135,7 +135,7 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
       next.flush
     }
   }
-/*
+
   class RepPrependOp[A](list: List[Rep[A]], next: RepStreamOp[A]) extends RepStreamOp[A] {
     list foreach next.onData
     
@@ -162,7 +162,7 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
       next.flush
     }
   }
-  
+
   class RepGroupByOp[A, B](keyFun: Rep[A] => Rep[B], streamOpFun: Rep[B] => RepStreamOp[A]) extends RepStreamOp[A] {
     val map = new scala.collection.mutable.HashMap[Rep[B], RepStreamOp[A]]()
     
@@ -182,7 +182,9 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
       map.values foreach { _.flush }
     }
   }
-  
+
+  /*
+  //TODO remove this one? Map in LMS?
   class RepGroupByStreamOp[A, B](keyFun: Rep[A] => Rep[B], next: RepStreamOp[Map[Rep[B], List[Rep[A]]]]) extends RepStreamOp[A] {
     val map = new scala.collection.mutable.HashMap[Rep[B], List[Rep[A]]]()
     
@@ -202,7 +204,8 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
       next.flush
     }
   }
-  
+  */
+
   class RepDuplicateOp[A](next1: RepStreamOp[A], next2: RepStreamOp[A]) extends RepStreamOp[A] {
     def onData(data: Rep[A]) = {
       next1.onData(data)
@@ -216,7 +219,7 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
   }
   
   class RepAggregatorOp[A](next: RepStreamOp[List[Rep[A]]]) extends RepStreamOp[A] {
-    var list: List[Rep[A]] = Nil 
+    var list: Rep[List[Rep[A]]] = List() 
     def onData(data: Rep[A]) = {
       list = data :: list
       next.onData(list)
@@ -224,8 +227,8 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     def flush = next.flush
   }
   
-  class RepSplitMergeOp[A, B, C](first: RepStreamOp[B] => RepStreamOp[A],
-      second: RepStreamOp[C] => RepStreamOp[A], next: RepStreamOp[Pair[Rep[B], C]]) extends RepStreamOp[A] {
+/*  class RepSplitMergeOp[A, B, C](first: RepStreamOp[B] => RepStreamOp[A],
+      second: RepStreamOp[C] => RepStreamOp[A], next: RepStreamOp[Pair[Rep[B], Rep[C]]]) extends RepStreamOp[A] {
     val (firstZip, secondZip) = StreamFunctions.zipWith(next)
     val (firstStream, secondStream) = (first(firstZip), second(secondZip))
       
@@ -239,8 +242,9 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
       secondStream.flush
     }
   }
+  */
   
-  
+  /*
   class RepMultiSplitOp[A, B](num: Int, streams: (RepStreamOp[B], Int) => RepStreamOp[A], next: RepStreamOp[List[Rep[B]]]) extends RepStreamOp[A] {
     val zippedStreams = StreamFunctions.multiZipWith(num, next).zipWithIndex.map(x => streams(x._1, x._2))
   
@@ -251,6 +255,8 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
   }
   
   */
+  /* next:  StreamFunctions */
+  
 // ----------
   abstract class RepStreamOutput[A] extends RepStreamOp[A] {
     def flush = {}
@@ -305,9 +311,9 @@ trait BooleanOpsExpOpt extends BooleanOpsExp {
 
 trait RepStreamOpsExp extends RepStreamOps 
     with IfThenElseExp with IfThenElseExpOpt with BooleanOpsExp with BooleanOpsExpOpt with EqualExpBridge
-    with MiscOpsExp
+    with MiscOpsExp with ListOpsExp with ListOpsExpOpt
 
-trait ScalaGenRepStreamOps extends ScalaGenIfThenElse with ScalaGenMiscOps with ScalaGenBooleanOps
+trait ScalaGenRepStreamOps extends ScalaGenIfThenElse with ScalaGenMiscOps with ScalaGenBooleanOps with ScalaGenListOps
 {
   val IR: RepStreamOpsExp
 //  import IR._
