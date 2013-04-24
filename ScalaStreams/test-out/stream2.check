@@ -16,7 +16,10 @@ val x8 = println(x6)
 } else {
 ()
 }
-()
+val x11 = println("flush")
+val x12 = println(86)
+val x13 = println("----")
+x13
 }
 }
 /*****************************************
@@ -27,3 +30,6 @@ compilation: ok
 8
 10
 12
+flush
+86
+----

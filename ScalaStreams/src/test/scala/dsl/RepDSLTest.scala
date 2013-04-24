@@ -9,6 +9,8 @@ import java.io.PrintWriter
 import java.io.StringWriter
 import java.io.FileOutputStream
 import scala.reflect.SourceContext
+import scala.collection.mutable.HashMap
+
 
 
 trait RepStreamProg extends RepStreamOps with NumericOps
@@ -22,6 +24,10 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     m.onData(unit(3))
     m.onData(unit(4))
     m.onData(i)
+    m.flush
+    m.onData(unit(42))
+    
+    println(unit("----"))
   }
 
   def test1(i: Rep[Int]) = {
@@ -35,7 +41,9 @@ trait RepStreamProg extends RepStreamOps with NumericOps
   def test3(i: Rep[Int]) = {
     testRepStream(i, new RepMapOp[Int, Int]({x: Rep[Int] => 2 * x}, new RepPrintOp[Int]))
     testRepStream(i, new RepFilterOp[Int]({x: Rep[Int] => x > unit(3)}, new RepPrintOp[Int]))
-    testRepStream(i, new RepReduceOp[Int]({(x, y) => x + y}, new RepPrintOp[Int]))
+    val s = new RepReduceOp[Int]({(x, y) => x + y}, new RepPrintOp[Int])
+    testRepStream(i, s)
+    s.onData(unit(43))
     testRepStream(i, new RepFoldOp[Int, Int]({(x, y) => x + y}, unit(1), new RepPrintOp[Int]))
     testRepStream(i, new RepFlatMapOp[Int, Int]({x => x :: x :: Nil}, new RepPrintOp[Int]))
   }
@@ -62,16 +70,18 @@ trait RepStreamProg extends RepStreamOps with NumericOps
 // TODO why can't I use IfThenElse here?
     //testRepStream(i, new RepGroupByOp[Int, Int]({x => x * unit(3)}, {x => if (x < unit(10)) { new RepMapOp[Int, Int]({x => -x}, new RepPrintOp[Int]) } else { new RepPrintOp[Int] }}))
     testRepStream(i, new RepGroupByOp[Int, Int]({x => 2 * x}, {k => new RepMapOp[Int, Int]({x => x + unit(10) * k}, new RepPrintOp[Int])}))
-// TODO map in LMS?    
-    //testRepStream(i, new RepGroupByStreamOp[Int, Int]({x => 2 * x}, new RepPrintOp[Map[Rep[Int], List[Rep[Int]]]]))
     testRepStream(i, new RepDuplicateOp[Int](new RepMapOp[Int, Int]({x => x + unit(10)}, new RepPrintOp[Int]), new RepMapOp[Int, Int]({x => x}, new RepPrintOp[Int])))
     testRepStream(i, new RepAggregatorOp[Int](new RepPrintOp[List[Int]]))
   }
-  
+
   def test7(i: Rep[Int]) = {
     // TODO can remove unused Variables/stores?
     val (s1, s2) = RepStreamFunctions.zipWith[Int, Int](new RepPrintOp[(Int, Int)])
     testRepStream(i, s1)
+    testRepStream(i, new RepMapOp[Int, Int]({x => x + unit(1)}, s2))
+    s1.onData(unit(0))
+    s1.onData(unit(1))
+    s1.onData(unit(2))
     testRepStream(i, new RepMapOp[Int, Int]({x => x + unit(1)}, s2))
 
     testRepStream(i, new RepSplitMergeOp[Int, Int, Int]({s1 => new RepMapOp[Int, Int]({x => x}, s1)},
@@ -94,11 +104,22 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     testRepStream(i, new RepMapOp[Int, Int]({x => x + unit(2)}, l3(2)))
 
   }
+    
+  def test8(i: Rep[Int]) = {
+    val s = new RepGroupByStreamOp[Int, Int]({x => 2 * x}, new RepPrintOp[HashMap[Int, List[Int]]]) 
+    testRepStream(i, s)
+    testRepStream(i, s)
+    
+    testRepStream(i, new RepMultiSplitOp[Int, Int](3, {(s, n) => new RepMapOp[Int, Int]({x => x * unit(n)}, s)},
+        new RepPrintOp[List[Int]]))
+
+
+    
+  }
+  
+
 
 /* 
-    val op23e = new AssertEqualsOp((0::0::0::0::0::Nil) :: (0::1::2::3::4::Nil) :: (0::2::4::6::8::Nil) ::  Nil, "MultiSplitOp")
-    new ListInput(0 :: 1 :: 2 :: Nil, new MultiSplitOp[Int, Int](5, (next, index) => new MapOp(x => x * index, next), op23e))
-    op23e.verify()
 
     val op24 = new AssertEqualsOp[List[(Int, Int)]](((2, 2) :: Nil) :: ((1,1) :: Nil) :: ((3,3) :: Nil) :: ((4,4) :: Nil) :: ((1,1) :: (1,1) :: Nil) :: Nil, "equiJoin")
     val (a3, b3) = StreamFunctions.equiJoin[Int, Int, Int](x => x, x => x, op24)
@@ -375,7 +396,7 @@ class TestRepStreamOps extends FileDiffSuite {
 
   def testRepStream1 = {
     withOutFile(prefix+"stream1"){
-       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+      new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
         with OrderingOpsExp with OrderingOpsExpOpt with BooleanOpsExpOpt with ScalaCompile{ self =>
 
         val printWriter = new java.io.PrintWriter(System.out)
@@ -394,7 +415,7 @@ class TestRepStreamOps extends FileDiffSuite {
   
   def testRepStream2 = {
     withOutFile(prefix+"stream2"){
-       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+      new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
         with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
 
         val printWriter = new java.io.PrintWriter(System.out)
@@ -413,7 +434,7 @@ class TestRepStreamOps extends FileDiffSuite {
 
   def testRepStream3 = {
     withOutFile(prefix+"stream3"){
-       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+      new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
         with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
 
         val printWriter = new java.io.PrintWriter(System.out)
@@ -432,7 +453,7 @@ class TestRepStreamOps extends FileDiffSuite {
   
   def testRepStream4 = {
     withOutFile(prefix+"stream4"){
-       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+      new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
         with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
 
         val printWriter = new java.io.PrintWriter(System.out)
@@ -451,7 +472,7 @@ class TestRepStreamOps extends FileDiffSuite {
   
   def testRepStream5 = {
     withOutFile(prefix+"stream5"){
-       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+      new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
         with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
 
         val printWriter = new java.io.PrintWriter(System.out)
@@ -470,7 +491,7 @@ class TestRepStreamOps extends FileDiffSuite {
   
   def testRepStream6 = {
     withOutFile(prefix+"stream6"){
-       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+      new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
         with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
 
         val printWriter = new java.io.PrintWriter(System.out)
@@ -489,7 +510,7 @@ class TestRepStreamOps extends FileDiffSuite {
   
   def testRepStream7 = {
     withOutFile(prefix+"stream7"){
-       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+      new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
         with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
 
         val printWriter = new java.io.PrintWriter(System.out)
@@ -504,5 +525,24 @@ class TestRepStreamOps extends FileDiffSuite {
       }
     }
     assertFileEqualsCheck(prefix+"stream7")
+  }
+  
+  def testRepStream8 = {
+    withOutFile(prefix+"stream8"){
+      new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+        with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
+
+        val printWriter = new java.io.PrintWriter(System.out)
+
+        val codegen = new ScalaGenRepStreamOps with ScalaGenNumericOps
+          with ScalaGenOrderingOps { val IR: self.type = self }
+
+        codegen.emitSource(test8 _ , "test8", printWriter)
+        val test = compile(test8)
+        test(5)
+
+      }
+    }
+    assertFileEqualsCheck(prefix+"stream8")
   }
 }

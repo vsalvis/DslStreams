@@ -11,17 +11,26 @@ val x5 = println(2)
 val x6 = println(3)
 val x7 = println(4)
 val x8 = println(x0)
-val x9 = println(0)
-val x10 = println(1)
-val x11 = println(2)
-val x12 = println(3)
-val x13 = println(4)
-val x14 = println(x0)
-val x15 = println(6)
-val x16 = println(0)
-val x17 = println(1)
-val x18 = println(2)
-()
+val x9 = println("flush")
+val x10 = println(-2)
+val x11 = println(-1)
+val x12 = println(42)
+val x13 = println("----")
+val x14 = println(0)
+val x15 = println(1)
+val x16 = println(2)
+val x17 = println(3)
+val x18 = println(4)
+val x19 = println("flush")
+val x20 = println("----")
+val x21 = println(42)
+val x22 = println(6)
+val x23 = println(0)
+val x24 = println(1)
+val x25 = println(2)
+val x26 = println("flush")
+val x27 = println("----")
+x27
 }
 }
 /*****************************************
@@ -36,13 +45,22 @@ compilation: ok
 3
 4
 5
+flush
+-2
+-1
+42
+----
 0
 1
 2
 3
 4
-5
+flush
+----
+42
 6
 0
 1
 2
+flush
+----

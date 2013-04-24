@@ -10,40 +10,56 @@ val x4 = println(6)
 val x5 = println(8)
 val x6 = 2 * x0
 val x7 = println(x6)
-val x8 = println(4)
-val x9 = x0 > 3
-val x12 = if (x9) {
-val x10 = println(x0)
+val x8 = println("flush")
+val x9 = println(84)
+val x10 = println("----")
+val x11 = println(4)
+val x12 = x0 > 3
+val x15 = if (x12) {
+val x13 = println(x0)
 ()
 } else {
 ()
 }
-val x13 = println(1)
-val x14 = println(3)
-val x15 = println(6)
-val x16 = println(10)
-val x17 = 10 + x0
-val x18 = println(x17)
+val x16 = println("flush")
+val x17 = println(42)
+val x18 = println("----")
 val x19 = println(1)
-val x20 = println(2)
-val x21 = println(4)
-val x22 = println(7)
-val x23 = println(11)
-val x24 = x0 + 11
-val x25 = println(x24)
-val x26 = println(0)
-val x27 = println(0)
+val x20 = println(3)
+val x21 = println(6)
+val x22 = println(10)
+val x23 = 10 + x0
+val x24 = println(x23)
+val x25 = println("flush")
+val x26 = println("----")
+val x27 = println(85)
 val x28 = println(1)
-val x29 = println(1)
-val x30 = println(2)
-val x31 = println(2)
-val x32 = println(3)
-val x33 = println(3)
-val x34 = println(4)
-val x35 = println(4)
-val x36 = println(x0)
-val x37 = println(x0)
-()
+val x29 = println(2)
+val x30 = println(4)
+val x31 = println(7)
+val x32 = println(11)
+val x33 = x0 + 11
+val x34 = println(x33)
+val x35 = println("flush")
+val x36 = println(43)
+val x37 = println("----")
+val x38 = println(0)
+val x39 = println(0)
+val x40 = println(1)
+val x41 = println(1)
+val x42 = println(2)
+val x43 = println(2)
+val x44 = println(3)
+val x45 = println(3)
+val x46 = println(4)
+val x47 = println(4)
+val x48 = println(x0)
+val x49 = println(x0)
+val x50 = println("flush")
+val x51 = println(42)
+val x52 = println(42)
+val x53 = println("----")
+x53
 }
 }
 /*****************************************
@@ -56,19 +72,31 @@ compilation: ok
 6
 8
 10
+flush
+84
+----
 4
 5
+flush
+42
+----
 1
 3
 6
 10
 15
+flush
+----
+85
 1
 2
 4
 7
 11
 16
+flush
+43
+----
 0
 0
 1
@@ -81,3 +109,7 @@ compilation: ok
 4
 5
 5
+flush
+42
+42
+----
