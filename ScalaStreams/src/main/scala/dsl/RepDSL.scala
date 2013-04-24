@@ -10,6 +10,7 @@ import java.io.FileOutputStream
 import scala.reflect.SourceContext
 import scala.collection.mutable.HashMap
 
+// TODO add manifests everywhere?
 trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
    with Variables with ListOps with EmbeddedControls with TupleOps
    with HashMapOps {
@@ -412,38 +413,108 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
       }
     }
   }
-  /* TODO next:  StreamInput/Output */
   
-// ----------
+  // ---------- Input/Output ----------
+  
   class RepPrintOp[A]() extends RepStreamOp[A] {
     def onData(data: Rep[A]) = println(data)
     def flush = println(unit("flush"))
   }
   
+  // TODO how to simulate list.foreach so it is inlined?
+  // This is not unrolled.
+  class RepListInput[A: Manifest](list: Rep[List[A]], stream: RepStreamOp[A]) {
+    list.map[A]({x => stream.onData(x); x})
+  } 
+  
   // API
   
   object RepStream {
-    def apply[A] = new RepStream[A,A] {
+    def apply[A: Manifest] = new RepStream[A,A] {
       def into(out: RepStreamOp[A]): RepStreamOp[A] = out
     }
   }
   
-  abstract class RepStream[A,B] { self =>
+  abstract class RepStream[A: Manifest, B: Manifest] { self =>
     def into(out: RepStreamOp[B]): RepStreamOp[A]
-    def into[C](next: RepStream[B, C]): RepStream[A, C] = new RepStream[A, C] {
+    def into[C: Manifest](next: RepStream[B, C]): RepStream[A, C] = new RepStream[A, C] {
       def into(out: RepStreamOp[C]) = self.into(next.into(out))
     }
     
     def print = into(new RepPrintOp[B]())
     
+    def aggregate() = new RepStream[A,List[B]] {
+      def into(out: RepStreamOp[List[B]]) = self.into(new RepAggregatorOp[B](out))
+    }
+    def drop(n: Int) = new RepStream[A,B] {
+      def into(out: RepStreamOp[B]) = self.into(new RepDropOp(n, out))
+    }
+    def dropWhile(p: Rep[B] => Rep[Boolean]) = new RepStream[A,B] {
+      def into(out: RepStreamOp[B]) = self.into(new RepDropWhileOp(p, out))
+    }
     def filter(p: Rep[B] => Rep[Boolean]) = new RepStream[A,B] {
       def into(out: RepStreamOp[B]) = self.into(new RepFilterOp(p, out))
     }
-    def map[C](f: Rep[B] => Rep[C]) = new RepStream[A,C] {
+    def flatMap[C: Manifest](f: Rep[B] => List[Rep[C]]) = new RepStream[A,C] {
+      def into(out: RepStreamOp[C]) = self.into(new RepFlatMapOp(f, out))
+    }
+    def fold[C: Manifest](f: (Rep[B], Rep[C]) => Rep[C], z: Rep[C]) = new RepStream[A,C] {
+      def into(out: RepStreamOp[C]) = self.into(new RepFoldOp(f, z, out))
+    }
+    def groupByStream[K: Manifest](keyF: Rep[B] => Rep[K]) = new RepStream[A,HashMap[K, List[B]]] {
+      def into(out: RepStreamOp[HashMap[K, List[B]]]) = self.into(new RepGroupByStreamOp[B, K](keyF, out))
+    }
+    def map[C: Manifest](f: Rep[B] => Rep[C]) = new RepStream[A,C] {
       def into(out: RepStreamOp[C]) = self.into(new RepMapOp(f, out))
+    }
+    def multiSplit[C: Manifest](num: Int, streams: (RepStreamOp[C], Int) => RepStreamOp[B]) = new RepStream[A, List[C]] {
+      def into(out: RepStreamOp[List[C]]) = self.into(new RepMultiSplitOp(num, streams, out))
+    }
+    def offset(n: Int) = new RepStream[A,B] {
+      def into(out: RepStreamOp[B]) = self.into(new RepOffsetOp(n, out))
+    }
+    def prepend(list: List[Rep[B]]) = new RepStream[A,B] {
+      def into(out: RepStreamOp[B]) = self.into(new RepPrependOp(list, out))
+    }
+    def reduce(f: (Rep[B], Rep[B]) => Rep[B]) = new RepStream[A,B] {
+      def into(out: RepStreamOp[B]) = self.into(new RepReduceOp(f, out))
+    }
+    def splitMerge[C: Manifest, D: Manifest](first: RepStream[B,C], second: RepStream[B,D]) = new RepStream[A,Pair[C,D]] {
+      def into(out: RepStreamOp[Pair[C,D]]) = self.into(
+          new RepSplitMergeOp({x: RepStreamOp[C] => first into x}, {y: RepStreamOp[D] => second into y}, out))
+    }
+    def take(n: Int) = new RepStream[A,B] {
+      def into(out: RepStreamOp[B]) = self.into(new RepTakeOp(n, out))
+    }
+    def takeWhile(p: Rep[B] => Rep[Boolean]) = new RepStream[A,B] {
+      def into(out: RepStreamOp[B]) = self.into(new RepTakeWhileOp(p, out))
+    }
+        
+    // special functions: Those are not simple Streams because they have
+    // multiple in- or output streams
+    def duplicate(first: RepStreamOp[B], second: RepStreamOp[B]) = {
+      self.into(new RepDuplicateOp(first, second))
+    }
+    // TODO implement RepStreamOp and then APi
+//    def equiJoin[C, D, K](other: Stream[C,D], keyFunThis: B => K, keyFunOther: D => K, next: StreamOp[List[(B,D)]]) = {
+//      val (a, b) = StreamFunctions.equiJoin(keyFunThis, keyFunOther, next)
+//      (self.into(a), other.into(b))
+//    }
+    def groupBy[K](keyF: Rep[B] => Rep[K], streamF: Rep[K] => RepStreamOp[B]) = {
+      self.into(new RepGroupByOp(keyF, streamF))
+    }
+    // TODO don't have Rep[RepStream], what to do
+//    def multiZipWith(num: Int, others: List[RepStream[A,B]], next: RepStreamOp[List[B]]) = {
+//      val list = RepStreamFunctions.multiZipWith(num, next)
+//      self.into(list(0)) :: others.zip(list.drop(1)).map({x => x._1.into(x._2)})
+//    }
+    def zipWith[C,D: Manifest](other: RepStream[C,D], next: RepStreamOp[Pair[B, D]]) = {
+      val (a, b) = RepStreamFunctions.zipWith(next)
+      (self.into(a), other.into(b))
     }
   }
 }
+
 
 trait BooleanOpsExpOpt extends BooleanOpsExp {
   override def boolean_negate(lhs: Exp[Boolean])(implicit pos: SourceContext) : Exp[Boolean] = lhs match {
