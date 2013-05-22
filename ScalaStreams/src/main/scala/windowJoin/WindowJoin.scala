@@ -1,15 +1,13 @@
-package streams
+package windowJoin
 
 import java.lang.Thread
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.ArrayBlockingQueue
+import java.util.AbstractQueue
 import scala.collection.mutable.Queue
 
-object WindowJoin {
+object SoccerWindowJoin {
   
-  /**
-   * 
-   */
   abstract class LinkedThread[T, U](private val leftInQ: ConcurrentLinkedQueue[Option[T]], private val leftOutQ: ConcurrentLinkedQueue[Option[U]],
      private val rightInQ: ConcurrentLinkedQueue[Option[U]], private val rightOutQ: ConcurrentLinkedQueue[Option[T]]) extends Thread {
     
@@ -83,17 +81,12 @@ object WindowJoin {
           }
         }
       }
-        
-        
-        
     }
-    
-    
   }
   
   class WorkerThread[T, U](leftInQ2: ConcurrentLinkedQueue[Option[T]], leftOutQ2: ConcurrentLinkedQueue[Option[U]],
      rightInQ2: ConcurrentLinkedQueue[Option[U]], rightOutQ2: ConcurrentLinkedQueue[Option[T]],
-     outQ: ArrayBlockingQueue[(T, U)], left: LinkedThread[T, U], p: (T, U) => Boolean) 
+     outQ: AbstractQueue[(T, U)], left: LinkedThread[T, U], p: (T, U) => Boolean) 
      extends LinkedThread[T, U](leftInQ2, leftOutQ2, rightInQ2, rightOutQ2) {
     
     def isRightmost = right.isInstanceOf[CoordinatorThread[T, U]]
@@ -139,7 +132,6 @@ object WindowJoin {
         }
         rcvRight match {
           case None if (isRightmost) => 
-            println(this.getId() + " from right: None")
             queueL2R.dequeue
             l2rForwarded -= 1
           case Some(r) =>
@@ -191,7 +183,7 @@ object WindowJoin {
   
   def linkWorkers[T, U](nWorkers: Int, leftInQ: ConcurrentLinkedQueue[Option[T]], leftOutQ: ConcurrentLinkedQueue[Option[U]],
      rightInQ: ConcurrentLinkedQueue[Option[U]], rightOutQ: ConcurrentLinkedQueue[Option[T]], 
-     outQ: ArrayBlockingQueue[(T, U)], prev: LinkedThread[T, U], coordinator: CoordinatorThread[T, U],
+     outQ: AbstractQueue[(T, U)], prev: LinkedThread[T, U], coordinator: CoordinatorThread[T, U],
      p: (T, U) => Boolean): LinkedThread[T, U] = nWorkers match {
     case 0 => 
       val t = new WorkerThread[T, U](leftInQ, leftOutQ, rightInQ, rightOutQ, outQ, prev, p)
@@ -209,4 +201,19 @@ object WindowJoin {
     case _ => throw new IllegalArgumentException("Cannot link a negative number of workers for windowjoin.")
   }
 
+}
+
+class NaiveWindowJoin[T, U](leftInQ: ConcurrentLinkedQueue[T], leftOutQ: ConcurrentLinkedQueue[U],
+     rightInQ: ConcurrentLinkedQueue[U], rightOutQ: ConcurrentLinkedQueue[T],
+     outQ: AbstractQueue[(T, U)], p: (T, U) => Boolean, windowSize: Int) {
+  
+  
+  
+  
+}
+
+class NaiveJoinSemantics[T, U] {
+  def join[T, U](l1: List[T], l2: List[U], p: ((T, U)) => Boolean, outQ: AbstractQueue[(T, U)]): Unit = {
+    (for(i <- l1; j <- l2) yield (i, j)) filter(p) foreach (outQ.add)
+  }
 }
