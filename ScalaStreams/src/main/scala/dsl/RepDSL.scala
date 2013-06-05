@@ -3,6 +3,7 @@ package dsl
 import scala.virtualization.lms.common
 import scala.virtualization.lms.common._
 import scala.virtualization.lms.common.Functions
+import scala.virtualization.lms.internal._
 import scala.virtualization.lms.util.OverloadHack
 import java.io.PrintWriter
 import java.io.StringWriter
@@ -10,17 +11,16 @@ import java.io.FileOutputStream
 import scala.reflect.SourceContext
 import scala.collection.mutable.HashMap
 
-// TODO add manifests everywhere?
 trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
    with Variables with ListOps with EmbeddedControls with TupleOps
-   with HashMapOps {
+   with HashMapOps with StaticData with ArrayOps with CastingOps
+   with OrderingOps with NumericOps with Equal with Effects with Functions {
   
   abstract class RepStreamOp[A] {
     def onData(data: Rep[A])
     def flush
   }
   
-  // TODO synchronization?
 
   class RepMapOp[A, B](f: Rep[A] => Rep[B], next: RepStreamOp[B]) extends RepStreamOp[A] {
     def onData(data: Rep[A]) = next.onData(f(data))
@@ -32,38 +32,51 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     def flush = next.flush
   }
 
+  class RepReduceOp[A: Manifest](f: (Rep[A], Rep[A]) => Rep[A], next: RepStreamOp[A]) extends RepStreamOp[A] {
+    val resultState = new Array[A](1)
+    val initState = new Array[Boolean](1)
+    initState(0) = true
   
-  class RepReduceOp[A](f: (Rep[A], Rep[A]) => Rep[A], next: RepStreamOp[A]) extends RepStreamOp[A] {
-    var result: Rep[A] = null.asInstanceOf[Rep[A]]
-    
     def onData(data: Rep[A]) = {
-      if (result == null) {
-        result = data
+      val resultStateR: Rep[Array[A]] = staticData(resultState)
+      val initStateR: Rep[Array[Boolean]] = staticData(initState)
+      
+      if (initStateR(unit(0))) {
+        initStateR(unit(0)) = unit(false)
+        resultStateR(unit(0)) = data
       } else {
-        result = f(result, data)
+        val result = f(resultStateR(unit(0)), data)
+        resultStateR(unit(0)) = result
         next.onData(result)
       }
     }
     
     def flush = {
-      result = null.asInstanceOf[Rep[A]]
+      val initStateR: Rep[Array[Boolean]] = staticData(initState)
+      initStateR(unit(0)) = unit(true)
       next.flush
     }
   }
   
-  class RepFoldOp[A, B](f: (Rep[A], Rep[B]) => Rep[B], z: Rep[B], next: RepStreamOp[B]) extends RepStreamOp[A] {
-    var result = z
-    
+  class RepFoldOp[A: Manifest, B: Manifest](f: (Rep[A], Rep[B]) => Rep[B], z: B, next: RepStreamOp[B]) extends RepStreamOp[A] {
+    val state = new Array[B](1)
+    state(0) = z
+  
     def onData(data: Rep[A]) = {
-      result = f(data, result); next.onData(result)
+      val stateR: Rep[Array[B]] = staticData(state)
+      val result = f(data, stateR(unit(0)))
+      stateR(unit(0)) = result
+      next.onData(result)
     }
     
     def flush = {
-      result = z
+      val stateR: Rep[Array[B]] = staticData(state)
+      stateR(unit(0)) = unit(z)
       next.flush
     }
   }
   
+  // TODO sneaky flatMap
   class RepFlatMapOp[A, B](f: Rep[A] => List[Rep[B]], next: RepStreamOp[B]) extends RepStreamOp[A] {
     def onData(data: Rep[A]) = f(data) foreach next.onData
   
@@ -72,69 +85,80 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
   
     
   class RepDropOp[A](n: Int, next: RepStreamOp[A]) extends RepStreamOp[A] {
-    var num = n
+    val state = new Array[Int](1)
+    state(0) = n
+
     def onData(data: Rep[A]) = {
-      if (num > 0) {
-        num -= 1
+      val stateR: Rep[Array[Int]] = staticData(state)
+      val num: Rep[Int] = stateR(unit(0))
+      if (num > unit(0)) {
+        stateR(unit(0)) = num - unit(1)
       } else {
         next.onData(data)
       }
     }
     
     def flush = {
-      num = n
+      val stateR: Rep[Array[Int]] = staticData(state)
+      stateR(unit(0)) = unit(n)
       next.flush
     }
   }
 
   class RepDropWhileOp[A](p: Rep[A] => Rep[Boolean], next: RepStreamOp[A]) extends RepStreamOp[A] {
-    var dropping = unit(true)
+    val state = new Array[Boolean](1)
+    state(0) = true
+    
     def onData(data: Rep[A]) = {
-      dropping = dropping && p(data)
-// TODO LMS bug?      
-//      if (dropping && !p(data)) {
-//        dropping = unit(false)
-//      }
-      
-      if (!dropping) {
+      val stateR: Rep[Array[Boolean]] = staticData(state)
+      stateR(unit(0)) = stateR(unit(0)) && p(data)
+      if (!stateR(unit(0))) {
         next.onData(data)
       }
     }
     
     def flush = {
-      dropping = unit(true)
+      val stateR: Rep[Array[Boolean]] = staticData(state)
+      stateR(unit(0)) = unit(true)
       next.flush
     }
   }
-
+  
   class RepTakeOp[A](n: Int, next: RepStreamOp[A]) extends RepStreamOp[A] {
-    var num = n
+    val state = new Array[Int](1)
+    state(0) = n
+
     def onData(data: Rep[A]) = {
-      if (num > 0) {
-        num -= 1
+      val stateR: Rep[Array[Int]] = staticData(state)
+      val num: Rep[Int] = stateR(unit(0))
+      if (num > unit(0)) {
+        stateR(unit(0)) = num - unit(1)
         next.onData(data)
       }
     }
     
     def flush = {
-      num = n
+      val stateR: Rep[Array[Int]] = staticData(state)
+      stateR(unit(0)) = unit(n)
       next.flush
     }
   }
 
   class RepTakeWhileOp[A](p: Rep[A] => Rep[Boolean], next: RepStreamOp[A]) extends RepStreamOp[A] {
-    var taking = unit(true)
+    val state = new Array[Boolean](1)
+    state(0) = true
+    
     def onData(data: Rep[A]) = {
-      if (taking && !p(data)) {
-        taking = unit(false)
-      }
-      if (taking) {
+      val stateR: Rep[Array[Boolean]] = staticData(state)
+      stateR(unit(0)) = stateR(unit(0)) && p(data)
+      if (stateR(unit(0))) {
         next.onData(data)
       }
     }
     
     def flush = {
-      taking = unit(true)
+      val stateR: Rep[Array[Boolean]] = staticData(state)
+      stateR(unit(0)) = unit(true)
       next.flush
     }
   }
@@ -150,25 +174,45 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     }
   }
   
-  // TODO is this Queue ok? what if the data comes in dynamically?
-  // test5 seems to show it's working, but why?
-  class RepOffsetOp[A](n: Int, next: RepStreamOp[A]) extends RepStreamOp[A] {
-    val buffer = new scala.collection.mutable.Queue[Rep[A]]
-    
-    def onData(data: Rep[A]) = {
-      if (buffer.size == n) {
-        next.onData(buffer.dequeue)
-      }
-      buffer += data
-    }
+  class RepOffsetOp[A: Manifest](n: Int, next: RepStreamOp[A]) extends RepStreamOp[A] {
+    val bufferState = new Array[A](n)
+    val fullState = new Array[Boolean](1)
+    val nextState = new Array[Int](1)
+    fullState(0) = false
+    nextState(0) = 0
   
+    def onData(data: Rep[A]) = {
+      val bufferStateR: Rep[Array[A]] = staticData(bufferState)
+      val fullStateR: Rep[Array[Boolean]] = staticData(fullState)
+      val nextStateR: Rep[Array[Int]] = staticData(nextState)
+      
+      if (!fullStateR(unit(0))) {
+        val nextI = nextStateR(unit(0))
+        bufferStateR.update(nextI, data)
+        nextStateR(unit(0)) = (nextI + unit(1))
+        if (nextI == unit(n - 1)) {
+          fullStateR(unit(0)) = unit(true)
+          nextStateR(unit(0)) = unit(0)
+        }
+      } else {
+        val nextI = nextStateR(unit(0))
+        next.onData(bufferStateR(nextI))
+        bufferStateR.update(nextI, data)
+        val nextI2 = (nextI + unit(1))
+        nextStateR(unit(0)) = nextI2 - unit(n) * (nextI2 / unit(n)) 
+      }
+    }
+    
     def flush = {
-      buffer.dequeueAll(_ => true)
+      val fullStateR: Rep[Array[Boolean]] = staticData(fullState)
+      val nextStateR: Rep[Array[Int]] = staticData(nextState)
+      fullStateR(unit(0)) = unit(false)
+      nextStateR(unit(0)) = unit(0)
       next.flush
     }
   }
 
-  // TODO scala.collection.mutable.HashMap ok?
+  // TODO How to keep this state? Two tries below...
   class RepGroupByOp[A, B](keyFun: Rep[A] => Rep[B], streamOpFun: Rep[B] => RepStreamOp[A]) extends RepStreamOp[A] {
     val map = new scala.collection.mutable.HashMap[Rep[B], RepStreamOp[A]]()
     
@@ -188,7 +232,54 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
       map.values foreach { _.flush }
     }
   }
+  
+  //  class RepGroupByOp[A: Manifest, B: Manifest](keyFun: Rep[A] => Rep[B], streamOpFun: Rep[B] => RepStreamOp[A]) extends RepStreamOp[A] {
+//    val state = new Array[scala.collection.mutable.HashMap[B, RepStreamOp[A]]](1)
+//    state(0) = new scala.collection.mutable.HashMap[B, RepStreamOp[A]]()
+//        
+//    def onData(data: Rep[A]) = {
+//      val stateR: Rep[Array[HashMap[B, RepStreamOp[A]]]] = staticData(state)
+//      val map: Rep[HashMap[B, RepStreamOp[A]]] = stateR(unit(0))
+//      val key = keyFun(data)
+//      if (map.contains(key)) {
+//        map(key).onData(data)
+//      } else {
+//        val streamOp = streamOpFun(key)
+//        stateR(unit(0)).update(key, streamOp)
+//        unit(streamOp).onData(data)
+//      }
+//    }
+//  
+//    def flush = {
+//      val stateR: Rep[Array[HashMap[B, RepStreamOp[A]]]] = staticData(state)
+//      stateR(unit(0)).clear
+//    }
+//  }
 
+
+
+//// Think about this. Before, we had a streamOpFun: Rep[B] => RepStreamOp[A], but we cannot keep the
+//  // function as is because new RepStreamOp is not staged, since we want the streamOps to disappear...
+//  class RepGroupByOp[A: Manifest, B: Manifest](keyFun: Rep[A] => Rep[B], streamOpMap: scala.collection.mutable.HashMap[B, RepStreamOp[A]]) extends RepStreamOp[A] {
+//    def onData(data: Rep[A]) = {
+//      val map: Rep[HashMap[B, RepStreamOp[A]]] = staticData(streamOpMap)
+//      val key = keyFun(data)
+//      if (map.contains(key)) {
+//        repOnData(map(key), data)
+//      } // drop all elements for which we don't have a destination stream
+//    }
+//  
+//    def flush = {
+//      // TODO flush all streams in the map
+//    }
+//  }
+//  def repOnData[A: Manifest](s: Rep[RepStreamOp[A]], data: Rep[A]): Rep[RepStreamOp[A]]
+//  case class OnData[A](s: Exp[RepStreamOp[A]], data: Exp[A]) extends Def[RepStreamOp[A]]
+//  override def repOnData[A: Manifest](s: Exp[RepStreamOp[A]], data: Exp[A]) = OnData[A](s, data)
+
+  
+
+  // TODO persist Map state
   class RepGroupByStreamOp[A: Manifest, B: Manifest](keyFun: Rep[A] => Rep[B], next: RepStreamOp[HashMap[B, List[A]]]) extends RepStreamOp[A] {
     val map: Rep[HashMap[B, List[A]]] = HashMap[B, List[A]]()
     
@@ -220,19 +311,30 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     }
   }
   
-  // TODO better to use List[A] or List[Rep[A]]?
   class RepAggregatorOp[A: Manifest](next: RepStreamOp[List[A]]) extends RepStreamOp[A] {
-    var list: Rep[List[A]] = List() 
+
+    val listState = new Array[List[A]](1)
+    listState(0) = Nil
+  
     def onData(data: Rep[A]) = {
+      val listR: Rep[Array[List[A]]] = staticData(listState)
+      
+      var list: Rep[List[A]] = listR(unit(0))
       list = data :: list
+      
+      listR(unit(0)) = list
+      
       next.onData(list)
     }
+  
     def flush = {
-      list = List()
+      val listR: Rep[Array[List[A]]] = staticData(listState)
+      listR(unit(0)) = List()
       next.flush
     }
   }
   
+  // TODO persist state
   class RepSplitMergeOp[A, B: Manifest, C: Manifest](first: RepStreamOp[B] => RepStreamOp[A],
       second: RepStreamOp[C] => RepStreamOp[A], next: RepStreamOp[(B, C)]) extends RepStreamOp[A] {
     val (firstZip, secondZip) = RepStreamFunctions.zipWith(next)
@@ -249,6 +351,7 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     }
   }
   
+  // TODO persist state
   class RepMultiSplitOp[A, B: Manifest](num: Int, streams: (RepStreamOp[B], Int) => RepStreamOp[A], next: RepStreamOp[List[B]]) extends RepStreamOp[A] {
     val zippedStreams = RepStreamFunctions.multiZipWith(num, next).zipWithIndex.map(x => streams(x._1, x._2))
   
@@ -421,8 +524,6 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     def flush = println(unit("flush"))
   }
   
-  // TODO how to simulate list.foreach so it is inlined?
-  // This is not unrolled.
   class RepListInput[A: Manifest](list: Rep[List[A]], stream: RepStreamOp[A]) {
     list.map[A]({x => stream.onData(x); x})
   } 
@@ -458,7 +559,7 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     def flatMap[C: Manifest](f: Rep[B] => List[Rep[C]]) = new RepStream[A,C] {
       def into(out: RepStreamOp[C]) = self.into(new RepFlatMapOp(f, out))
     }
-    def fold[C: Manifest](f: (Rep[B], Rep[C]) => Rep[C], z: Rep[C]) = new RepStream[A,C] {
+    def fold[C: Manifest](f: (Rep[B], Rep[C]) => Rep[C], z: C) = new RepStream[A,C] {
       def into(out: RepStreamOp[C]) = self.into(new RepFoldOp(f, z, out))
     }
     def groupByStream[K: Manifest](keyF: Rep[B] => Rep[K]) = new RepStream[A,HashMap[K, List[B]]] {
@@ -554,20 +655,29 @@ trait ListOpsExpOpt2 extends ListOpsExpOpt {
 }
 
 trait RepStreamOpsExp extends RepStreamOps 
-    with IfThenElseExp with IfThenElseExpOpt with BooleanOpsExp with BooleanOpsExpOpt with EqualExpBridge
+    with IfThenElseExp with IfThenElseExpOpt with BooleanOpsExp with BooleanOpsExpOpt with EqualExp with EqualExpOpt
     with MiscOpsExp with ListOpsExp with ListOpsExpOpt with ListOpsExpOpt2 with TupleOpsExp with VariablesExp with VariablesExpOpt
-    with HashMapOpsExp
+    with HashMapOpsExp with StaticDataExp with ArrayOpsExp with CastingOpsExp with OrderingOpsExp with NumericOpsExp
+    with EffectExp with FunctionsExp {
+  
+  // Use StaticData and Array to keep mutable state in the generated StreamOp.
+  override def array_apply[T: Manifest](x: Exp[Array[T]], n: Exp[Int])(implicit pos: SourceContext): Exp[T] = reflectWrite(x)(ArrayApply(x, n))
+}
 
-trait ScalaGenRepStreamOps extends ScalaGenIfThenElse with ScalaGenMiscOps with ScalaGenBooleanOps
-    with ScalaGenListOps with ScalaGenTupleOps with ScalaGenVariables with ScalaGenHashMapOps
+trait ScalaGenRepStreamOps extends ScalaGenIfThenElse with ScalaGenMiscOps with ScalaGenBooleanOps with ScalaGenEqual
+    with ScalaGenListOps with ScalaGenTupleOps with ScalaGenVariables with ScalaGenHashMapOps with ScalaGenStaticData
+    with ScalaGenArrayOps with ScalaGenCastingOps with ScalaGenOrderingOps with ScalaGenNumericOps with ScalaGenEffect
+    with ScalaGenFunctions
 {
   val IR: RepStreamOpsExp
-//  import IR._
-//  
-//  override def emitNode(sym: Sym[Any], node: Def[Any]): Unit = node match {
-//    case _ => { Predef.println("sym: " + sym + ", node: " + node.toString); super.emitNode(sym, node) }
-//  }
+  import IR._
 
+  override def emitNode(sym: Sym[Any], node: Def[Any]): Unit = node match {
+    case OnData(s, data) => {
+      emitValDef(sym, quote(s) + ".onData(" + quote(data) + ")")
+    }
+    case _ => super.emitNode(sym, node)
+  }
 }
 
 

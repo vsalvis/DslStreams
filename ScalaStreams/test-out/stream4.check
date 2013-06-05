@@ -1,42 +1,432 @@
 /*****************************************
   Emitting Generated Code                  
 *******************************************/
-class test4 extends ((Int)=>(Unit)) {
+class test4(px1:Array[Int],px61:Array[Boolean],px116:Array[Boolean],px171:Array[Int],px224:Array[Boolean],px271:Array[Boolean]) extends ((Int)=>(Unit)) {
 def apply(x0:Int): Unit = {
-val x1 = println(2)
-val x2 = println(3)
-val x3 = println(4)
-val x4 = println(x0)
-val x5 = println("flush")
-val x6 = println("----")
+val x1 = px1 // static data: Array(2)
+val x2 = x1(0)
+val x3 = x2 > 0
+val x9 = if (x3) {
+val x4 = x2 - 1
+val x5 = x1(0) = x4
+x5
+} else {
 val x7 = println(0)
-val x8 = println(1)
-val x9 = println(2)
-val x10 = println(3)
-val x11 = println(4)
-val x13 = println(x0)
-val x14 = println("flush")
-val x15 = println("----")
-val x16 = println(3)
-val x17 = println(4)
-val x19 = println(x0)
-val x20 = println("flush")
-val x21 = println(42)
-val x22 = println("----")
-val x23 = println(0)
-val x24 = println(1)
-val x25 = println("flush")
-val x26 = println(42)
-val x27 = println("----")
-val x29 = println("flush")
-val x30 = println(42)
-val x31 = println("----")
-val x32 = println(0)
-val x33 = println(1)
-val x34 = println(2)
-val x36 = println("flush")
-val x37 = println("----")
+()
+}
+val x10 = x1(0)
+val x11 = x10 > 0
+val x17 = if (x11) {
+val x12 = x10 - 1
+val x13 = x1(0) = x12
+x13
+} else {
+val x15 = println(1)
+()
+}
+val x18 = x1(0)
+val x19 = x18 > 0
+val x25 = if (x19) {
+val x20 = x18 - 1
+val x21 = x1(0) = x20
+x21
+} else {
+val x23 = println(2)
+()
+}
+val x26 = x1(0)
+val x27 = x26 > 0
+val x33 = if (x27) {
+val x28 = x26 - 1
+val x29 = x1(0) = x28
+x29
+} else {
+val x31 = println(3)
+()
+}
+val x34 = x1(0)
+val x35 = x34 > 0
+val x41 = if (x35) {
+val x36 = x34 - 1
+val x37 = x1(0) = x36
 x37
+} else {
+val x39 = println(4)
+()
+}
+val x42 = x1(0)
+val x43 = x42 > 0
+val x49 = if (x43) {
+val x44 = x42 - 1
+val x45 = x1(0) = x44
+x45
+} else {
+val x47 = println(x0)
+()
+}
+val x50 = x1(0) = 2
+val x51 = println("flush")
+val x52 = x1(0)
+val x53 = x52 > 0
+val x59 = if (x53) {
+val x54 = x52 - 1
+val x55 = x1(0) = x54
+x55
+} else {
+val x57 = println(42)
+()
+}
+val x60 = println("----")
+val x61 = px61 // static data: Array(true)
+val x62 = x61(0)
+val x63 = x61(0) = false
+val x64 = x61(0)
+val x68 = if (x64) {
+()
+} else {
+val x66 = println(0)
+()
+}
+val x69 = x61(0)
+val x70 = x61(0) = false
+val x71 = x61(0)
+val x75 = if (x71) {
+()
+} else {
+val x73 = println(1)
+()
+}
+val x76 = x61(0)
+val x77 = x61(0) = false
+val x78 = x61(0)
+val x82 = if (x78) {
+()
+} else {
+val x80 = println(2)
+()
+}
+val x83 = x61(0)
+val x84 = x61(0) = false
+val x85 = x61(0)
+val x89 = if (x85) {
+()
+} else {
+val x87 = println(3)
+()
+}
+val x90 = x61(0)
+val x91 = x61(0) = x90
+val x92 = x61(0)
+val x96 = if (x92) {
+()
+} else {
+val x94 = println(4)
+()
+}
+val x97 = x61(0)
+val x98 = x0 > 3
+val x99 = x97 && x98
+val x100 = x61(0) = x99
+val x101 = x61(0)
+val x105 = if (x101) {
+()
+} else {
+val x103 = println(x0)
+()
+}
+val x106 = x61(0) = true
+val x107 = println("flush")
+val x108 = x61(0)
+val x109 = x61(0) = x108
+val x110 = x61(0)
+val x114 = if (x110) {
+()
+} else {
+val x112 = println(42)
+()
+}
+val x115 = println("----")
+val x116 = px116 // static data: Array(true)
+val x117 = x116(0)
+val x118 = x116(0) = x117
+val x119 = x116(0)
+val x123 = if (x119) {
+()
+} else {
+val x121 = println(0)
+()
+}
+val x124 = x116(0)
+val x125 = x116(0) = x124
+val x126 = x116(0)
+val x130 = if (x126) {
+()
+} else {
+val x128 = println(1)
+()
+}
+val x131 = x116(0)
+val x132 = x116(0) = x131
+val x133 = x116(0)
+val x137 = if (x133) {
+()
+} else {
+val x135 = println(2)
+()
+}
+val x138 = x116(0)
+val x139 = x116(0) = false
+val x140 = x116(0)
+val x144 = if (x140) {
+()
+} else {
+val x142 = println(3)
+()
+}
+val x145 = x116(0)
+val x146 = x116(0) = false
+val x147 = x116(0)
+val x151 = if (x147) {
+()
+} else {
+val x149 = println(4)
+()
+}
+val x152 = x116(0)
+val x153 = x0 < 3
+val x154 = x152 && x153
+val x155 = x116(0) = x154
+val x156 = x116(0)
+val x160 = if (x156) {
+()
+} else {
+val x158 = println(x0)
+()
+}
+val x161 = x116(0) = true
+val x162 = println("flush")
+val x163 = x116(0)
+val x164 = x116(0) = false
+val x165 = x116(0)
+val x169 = if (x165) {
+()
+} else {
+val x167 = println(42)
+()
+}
+val x170 = println("----")
+val x171 = px171 // static data: Array(2)
+val x172 = x171(0)
+val x173 = x172 > 0
+val x178 = if (x173) {
+val x174 = x172 - 1
+val x175 = x171(0) = x174
+val x176 = println(0)
+()
+} else {
+()
+}
+val x179 = x171(0)
+val x180 = x179 > 0
+val x185 = if (x180) {
+val x181 = x179 - 1
+val x182 = x171(0) = x181
+val x183 = println(1)
+()
+} else {
+()
+}
+val x186 = x171(0)
+val x187 = x186 > 0
+val x192 = if (x187) {
+val x188 = x186 - 1
+val x189 = x171(0) = x188
+val x190 = println(2)
+()
+} else {
+()
+}
+val x193 = x171(0)
+val x194 = x193 > 0
+val x199 = if (x194) {
+val x195 = x193 - 1
+val x196 = x171(0) = x195
+val x197 = println(3)
+()
+} else {
+()
+}
+val x200 = x171(0)
+val x201 = x200 > 0
+val x206 = if (x201) {
+val x202 = x200 - 1
+val x203 = x171(0) = x202
+val x204 = println(4)
+()
+} else {
+()
+}
+val x207 = x171(0)
+val x208 = x207 > 0
+val x213 = if (x208) {
+val x209 = x207 - 1
+val x210 = x171(0) = x209
+val x211 = println(x0)
+()
+} else {
+()
+}
+val x214 = x171(0) = 2
+val x215 = println("flush")
+val x216 = x171(0)
+val x217 = x216 > 0
+val x222 = if (x217) {
+val x218 = x216 - 1
+val x219 = x171(0) = x218
+val x220 = println(42)
+()
+} else {
+()
+}
+val x223 = println("----")
+val x224 = px224 // static data: Array(true)
+val x225 = x224(0)
+val x226 = x224(0) = false
+val x227 = x224(0)
+val x230 = if (x227) {
+val x228 = println(0)
+()
+} else {
+()
+}
+val x231 = x224(0)
+val x232 = x224(0) = false
+val x233 = x224(0)
+val x236 = if (x233) {
+val x234 = println(1)
+()
+} else {
+()
+}
+val x237 = x224(0)
+val x238 = x224(0) = false
+val x239 = x224(0)
+val x242 = if (x239) {
+val x240 = println(2)
+()
+} else {
+()
+}
+val x243 = x224(0)
+val x244 = x224(0) = false
+val x245 = x224(0)
+val x248 = if (x245) {
+val x246 = println(3)
+()
+} else {
+()
+}
+val x249 = x224(0)
+val x250 = x224(0) = x249
+val x251 = x224(0)
+val x254 = if (x251) {
+val x252 = println(4)
+()
+} else {
+()
+}
+val x255 = x224(0)
+val x256 = x255 && x98
+val x257 = x224(0) = x256
+val x258 = x224(0)
+val x261 = if (x258) {
+val x259 = println(x0)
+()
+} else {
+()
+}
+val x262 = x224(0) = true
+val x263 = println("flush")
+val x264 = x224(0)
+val x265 = x224(0) = x264
+val x266 = x224(0)
+val x269 = if (x266) {
+val x267 = println(42)
+()
+} else {
+()
+}
+val x270 = println("----")
+val x271 = px271 // static data: Array(true)
+val x272 = x271(0)
+val x273 = x271(0) = x272
+val x274 = x271(0)
+val x277 = if (x274) {
+val x275 = println(0)
+()
+} else {
+()
+}
+val x278 = x271(0)
+val x279 = x271(0) = x278
+val x280 = x271(0)
+val x283 = if (x280) {
+val x281 = println(1)
+()
+} else {
+()
+}
+val x284 = x271(0)
+val x285 = x271(0) = x284
+val x286 = x271(0)
+val x289 = if (x286) {
+val x287 = println(2)
+()
+} else {
+()
+}
+val x290 = x271(0)
+val x291 = x271(0) = false
+val x292 = x271(0)
+val x295 = if (x292) {
+val x293 = println(3)
+()
+} else {
+()
+}
+val x296 = x271(0)
+val x297 = x271(0) = false
+val x298 = x271(0)
+val x301 = if (x298) {
+val x299 = println(4)
+()
+} else {
+()
+}
+val x302 = x271(0)
+val x303 = x302 && x153
+val x304 = x271(0) = x303
+val x305 = x271(0)
+val x308 = if (x305) {
+val x306 = println(x0)
+()
+} else {
+()
+}
+val x309 = x271(0) = true
+val x310 = println("flush")
+val x311 = x271(0)
+val x312 = x271(0) = false
+val x313 = x271(0)
+val x316 = if (x313) {
+val x314 = println(42)
+()
+} else {
+()
+}
+val x317 = println("----")
+val x318 = println("====")
+x318
 }
 }
 /*****************************************
@@ -76,3 +466,38 @@ flush
 2
 flush
 ----
+====
+1
+2
+3
+4
+5
+flush
+----
+0
+1
+2
+3
+4
+5
+flush
+----
+0
+1
+2
+3
+4
+5
+flush
+42
+----
+0
+flush
+42
+----
+flush
+42
+----
+flush
+----
+====

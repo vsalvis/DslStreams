@@ -1,7 +1,7 @@
 /*****************************************
   Emitting Generated Code                  
 *******************************************/
-class test6 extends ((Int)=>(Unit)) {
+class test6(px36:Array[scala.collection.immutable.List[Int]]) extends ((Int)=>(Unit)) {
 def apply(x0:Int): Unit = {
 val x1 = println(0)
 val x2 = println(21)
@@ -38,24 +38,40 @@ val x32 = println("flush")
 val x33 = println(52)
 val x34 = println(42)
 val x35 = println("----")
-val x36 = List()
-val x37 = 0 :: x36
-val x38 = println(x37)
-val x39 = 1 :: x37
-val x40 = println(x39)
-val x41 = 2 :: x39
-val x42 = println(x41)
-val x43 = 3 :: x41
-val x44 = println(x43)
-val x45 = 4 :: x43
-val x46 = println(x45)
-val x47 = x0 :: x45
-val x48 = println(x47)
-val x49 = println("flush")
-val x50 = 42 :: x36
-val x51 = println(x50)
-val x52 = println("----")
-x52
+val x36 = px36 // static data: Array(List())
+val x37 = x36(0)
+val x38 = 0 :: x37
+val x39 = x36(0) = x38
+val x40 = println(x38)
+val x41 = x36(0)
+val x42 = 1 :: x41
+val x43 = x36(0) = x42
+val x44 = println(x42)
+val x45 = x36(0)
+val x46 = 2 :: x45
+val x47 = x36(0) = x46
+val x48 = println(x46)
+val x49 = x36(0)
+val x50 = 3 :: x49
+val x51 = x36(0) = x50
+val x52 = println(x50)
+val x53 = x36(0)
+val x54 = 4 :: x53
+val x55 = x36(0) = x54
+val x56 = println(x54)
+val x57 = x36(0)
+val x58 = x0 :: x57
+val x59 = x36(0) = x58
+val x60 = println(x58)
+val x61 = List()
+val x62 = x36(0) = x61
+val x63 = println("flush")
+val x64 = x36(0)
+val x65 = 42 :: x64
+val x66 = x36(0) = x65
+val x67 = println(x65)
+val x68 = println("----")
+x68
 }
 }
 /*****************************************
@@ -99,6 +115,46 @@ List(2, 1, 0)
 List(3, 2, 1, 0)
 List(4, 3, 2, 1, 0)
 List(5, 4, 3, 2, 1, 0)
+flush
+List(42)
+----
+0
+21
+42
+63
+84
+105
+flush
+flush
+flush
+flush
+flush
+flush
+882
+----
+10
+0
+11
+1
+12
+2
+13
+3
+14
+4
+15
+5
+flush
+flush
+52
+42
+----
+List(0, 42)
+List(1, 0, 42)
+List(2, 1, 0, 42)
+List(3, 2, 1, 0, 42)
+List(4, 3, 2, 1, 0, 42)
+List(5, 4, 3, 2, 1, 0, 42)
 flush
 List(42)
 ----

@@ -14,8 +14,7 @@ import scala.collection.mutable.HashMap
 
 
 trait RepStreamProg extends RepStreamOps with NumericOps
-  with OrderingOps with OverloadHack
-  {
+  with OrderingOps with OverloadHack {
 
   def testRepStream(i: Rep[Int], m: RepStreamOp[Int]) = {
 //    new RepListInput[Int](List(unit(0), unit(1), unit(2), unit(3), unit(4), i), m)
@@ -46,8 +45,9 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     val s = new RepReduceOp[Int]({(x, y) => x + y}, new RepPrintOp[Int])
     testRepStream(i, s)
     s.onData(unit(43))
-    testRepStream(i, new RepFoldOp[Int, Int]({(x, y) => x + y}, unit(1), new RepPrintOp[Int]))
+    testRepStream(i, new RepFoldOp[Int, Int]({(x, y) => x + y}, 1, new RepPrintOp[Int]))
     testRepStream(i, new RepFlatMapOp[Int, Int]({x => x :: x :: Nil}, new RepPrintOp[Int]))
+    println(unit("===="))
   }
   
   def test3b(i: Rep[Int]) = {
@@ -56,8 +56,9 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     val s: RepStreamOp[Int] = RepStream[Int].reduce({(x, y) => x + y}).print
     testRepStream(i, s)
     s.onData(unit(43))
-    testRepStream(i, RepStream[Int].fold[Int]({(x, y) => x + y}, unit(1)) print)
+    testRepStream(i, RepStream[Int].fold[Int]({(x, y) => x + y}, 1) print)
     testRepStream(i, RepStream[Int].flatMap({x => x :: x :: Nil}).print)
+    println(unit("===="))
   }
 
   def test4(i: Rep[Int]) = {
@@ -67,6 +68,7 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     testRepStream(i, new RepTakeOp[Int](2, new RepPrintOp[Int]))
     testRepStream(i, new RepTakeWhileOp[Int]({x: Rep[Int] => x > unit(3)}, new RepPrintOp[Int]))
     testRepStream(i, new RepTakeWhileOp[Int]({x: Rep[Int] => x < unit(3)}, new RepPrintOp[Int]))
+    println(unit("===="))
   }
 
   def test4b(i: Rep[Int]) = {
@@ -76,6 +78,7 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     testRepStream(i, RepStream[Int].take(2).print)
     testRepStream(i, RepStream[Int].takeWhile({x: Rep[Int] => x > unit(3)}).print)
     testRepStream(i, RepStream[Int].takeWhile({x: Rep[Int] => x < unit(3)}).print)
+    println(unit("===="))
   }
 
   def test5(i: Rep[Int]) = {
@@ -85,6 +88,7 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     s.onData(unit(6))
     s.onData(unit(7))
     testRepStream(i, new RepOffsetOp[Int](3, new RepPrintOp[Int]))
+    println(unit("===="))
   }
 
   def test5b(i: Rep[Int]) = {
@@ -94,9 +98,10 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     s.onData(unit(6))
     s.onData(unit(7))
     testRepStream(i, RepStream[Int].offset(3).print)
+    println(unit("===="))
   }
 
-  def test6(i: Rep[Int]) = {
+def test6(i: Rep[Int]) = {
 // TODO why can't I use IfThenElse here?
     //testRepStream(i, new RepGroupByOp[Int, Int]({x => x * unit(3)}, {x => if (x < unit(10)) { new RepMapOp[Int, Int]({x => -x}, new RepPrintOp[Int]) } else { new RepPrintOp[Int] }}))
     testRepStream(i, new RepGroupByOp[Int, Int]({x => 2 * x}, {k => new RepMapOp[Int, Int]({x => x + unit(10) * k}, new RepPrintOp[Int])}))
@@ -111,6 +116,7 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     testRepStream(i, RepStream[Int].duplicate(RepStream[Int].map({x => x + unit(10)}).print, RepStream[Int].map({x => x}).print))
     testRepStream(i, RepStream[Int].aggregate().print)
   }
+
 
   def test7(i: Rep[Int]) = {
     // TODO can remove unused Variables/stores?
@@ -227,6 +233,7 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     new ListInput(list map (_ + 2), list2(2))
     op42.verify()
 */
+}
 
 trait OrderingOpsExpOpt extends OrderingOpsExp {
   override def ordering_lt[T:Ordering:Manifest](lhs: Exp[T], rhs: Exp[T])(implicit pos: SourceContext): Rep[Boolean] = (lhs, rhs) match {
@@ -315,7 +322,7 @@ class TestRepStreamOps extends FileDiffSuite {
         codegen.emitSource(test3 _ , "test3", printWriter)
         val test = compile(test3)
         test(5)
-
+        test(5)
       }
     }
     assertFileEqualsCheck(prefix+"stream3")
@@ -334,7 +341,7 @@ class TestRepStreamOps extends FileDiffSuite {
         codegen.emitSource(test3b _ , "test3", printWriter)
         val test = compile(test3b)
         test(5)
-
+        test(5)
       }
     }
     assertFileEqualsCheck(prefix+"stream3") // API same as non-API
@@ -353,7 +360,7 @@ class TestRepStreamOps extends FileDiffSuite {
         codegen.emitSource(test4 _ , "test4", printWriter)
         val test = compile(test4)
         test(5)
-
+        test(5)
       }
     }
     assertFileEqualsCheck(prefix+"stream4")
@@ -372,7 +379,7 @@ class TestRepStreamOps extends FileDiffSuite {
         codegen.emitSource(test4b _ , "test4", printWriter)
         val test = compile(test4b)
         test(5)
-
+        test(5)
       }
     }
     assertFileEqualsCheck(prefix+"stream4")  // API same as non-API
@@ -391,7 +398,7 @@ class TestRepStreamOps extends FileDiffSuite {
         codegen.emitSource(test5 _ , "test5", printWriter)
         val test = compile(test5)
         test(5)
-
+        test(5)
       }
     }
     assertFileEqualsCheck(prefix+"stream5")
@@ -410,7 +417,7 @@ class TestRepStreamOps extends FileDiffSuite {
         codegen.emitSource(test5b _ , "test5", printWriter)
         val test = compile(test5b)
         test(5)
-
+        test(5)
       }
     }
     assertFileEqualsCheck(prefix+"stream5")
@@ -428,6 +435,7 @@ class TestRepStreamOps extends FileDiffSuite {
 
         codegen.emitSource(test6 _ , "test6", printWriter)
         val test = compile(test6)
+        test(5)
         test(5)
 
       }
@@ -447,6 +455,7 @@ class TestRepStreamOps extends FileDiffSuite {
 
         codegen.emitSource(test6b _ , "test6", printWriter)
         val test = compile(test6b)
+        test(5)
         test(5)
 
       }

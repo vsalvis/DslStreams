@@ -1,7 +1,7 @@
 /*****************************************
   Emitting Generated Code                  
 *******************************************/
-class test5 extends ((Int)=>(Unit)) {
+class test5(px15:Array[Boolean],px16:Array[Int],px14:Array[Int],px220:Array[Boolean],px221:Array[Int],px219:Array[Int]) extends ((Int)=>(Unit)) {
 def apply(x0:Int): Unit = {
 val x1 = println(-2)
 val x2 = println(-1)
@@ -16,21 +16,475 @@ val x10 = println(-2)
 val x11 = println(-1)
 val x12 = println(42)
 val x13 = println("----")
-val x14 = println(0)
-val x15 = println(1)
-val x16 = println(2)
-val x17 = println(3)
-val x18 = println(4)
-val x19 = println("flush")
-val x20 = println("----")
-val x21 = println(42)
-val x22 = println(6)
-val x23 = println(0)
-val x24 = println(1)
-val x25 = println(2)
-val x26 = println("flush")
-val x27 = println("----")
-x27
+val x15 = px15 // static data: Array(false)
+val x17 = x15(0)
+val x16 = px16 // static data: Array(0)
+val x38 = if (x17) {
+val x19 = x16(0)
+val x14 = px14 // static data: Array(0)
+val x20 = x14(x19)
+val x21 = println(x20)
+val x22 = x14(x19) = 0
+val x23 = x19 + 1
+val x24 = x23 / 1
+val x25 = x23 - x24
+val x26 = x16(0) = x25
+x26
+} else {
+val x28 = x16(0)
+val x14 = px14 // static data: Array(0)
+val x29 = x14(x28) = 0
+val x30 = x28 + 1
+val x31 = x16(0) = x30
+val x32 = x28 == 0
+val x36 = if (x32) {
+val x33 = x15(0) = true
+val x34 = x16(0) = 0
+x34
+} else {
+()
+}
+x36
+}
+val x39 = x15(0)
+val x60 = if (x39) {
+val x41 = x16(0)
+val x14 = px14 // static data: Array(0)
+val x42 = x14(x41)
+val x43 = println(x42)
+val x44 = x14(x41) = 1
+val x45 = x41 + 1
+val x46 = x45 / 1
+val x47 = x45 - x46
+val x48 = x16(0) = x47
+x48
+} else {
+val x50 = x16(0)
+val x14 = px14 // static data: Array(0)
+val x51 = x14(x50) = 1
+val x52 = x50 + 1
+val x53 = x16(0) = x52
+val x54 = x50 == 0
+val x58 = if (x54) {
+val x55 = x15(0) = true
+val x56 = x16(0) = 0
+x56
+} else {
+()
+}
+x58
+}
+val x61 = x15(0)
+val x82 = if (x61) {
+val x63 = x16(0)
+val x14 = px14 // static data: Array(0)
+val x64 = x14(x63)
+val x65 = println(x64)
+val x66 = x14(x63) = 2
+val x67 = x63 + 1
+val x68 = x67 / 1
+val x69 = x67 - x68
+val x70 = x16(0) = x69
+x70
+} else {
+val x72 = x16(0)
+val x14 = px14 // static data: Array(0)
+val x73 = x14(x72) = 2
+val x74 = x72 + 1
+val x75 = x16(0) = x74
+val x76 = x72 == 0
+val x80 = if (x76) {
+val x77 = x15(0) = true
+val x78 = x16(0) = 0
+x78
+} else {
+()
+}
+x80
+}
+val x83 = x15(0)
+val x104 = if (x83) {
+val x85 = x16(0)
+val x14 = px14 // static data: Array(0)
+val x86 = x14(x85)
+val x87 = println(x86)
+val x88 = x14(x85) = 3
+val x89 = x85 + 1
+val x90 = x89 / 1
+val x91 = x89 - x90
+val x92 = x16(0) = x91
+x92
+} else {
+val x94 = x16(0)
+val x14 = px14 // static data: Array(0)
+val x95 = x14(x94) = 3
+val x96 = x94 + 1
+val x97 = x16(0) = x96
+val x98 = x94 == 0
+val x102 = if (x98) {
+val x99 = x15(0) = true
+val x100 = x16(0) = 0
+x100
+} else {
+()
+}
+x102
+}
+val x105 = x15(0)
+val x126 = if (x105) {
+val x107 = x16(0)
+val x14 = px14 // static data: Array(0)
+val x108 = x14(x107)
+val x109 = println(x108)
+val x110 = x14(x107) = 4
+val x111 = x107 + 1
+val x112 = x111 / 1
+val x113 = x111 - x112
+val x114 = x16(0) = x113
+x114
+} else {
+val x116 = x16(0)
+val x14 = px14 // static data: Array(0)
+val x117 = x14(x116) = 4
+val x118 = x116 + 1
+val x119 = x16(0) = x118
+val x120 = x116 == 0
+val x124 = if (x120) {
+val x121 = x15(0) = true
+val x122 = x16(0) = 0
+x122
+} else {
+()
+}
+x124
+}
+val x127 = x15(0)
+val x148 = if (x127) {
+val x129 = x16(0)
+val x14 = px14 // static data: Array(0)
+val x130 = x14(x129)
+val x131 = println(x130)
+val x132 = x14(x129) = x0
+val x133 = x129 + 1
+val x134 = x133 / 1
+val x135 = x133 - x134
+val x136 = x16(0) = x135
+x136
+} else {
+val x138 = x16(0)
+val x14 = px14 // static data: Array(0)
+val x139 = x14(x138) = x0
+val x140 = x138 + 1
+val x141 = x16(0) = x140
+val x142 = x138 == 0
+val x146 = if (x142) {
+val x143 = x15(0) = true
+val x144 = x16(0) = 0
+x144
+} else {
+()
+}
+x146
+}
+val x149 = x15(0) = false
+val x150 = x16(0) = 0
+val x151 = println("flush")
+val x152 = x15(0)
+val x173 = if (x152) {
+val x154 = x16(0)
+val x14 = px14 // static data: Array(0)
+val x155 = x14(x154)
+val x156 = println(x155)
+val x157 = x14(x154) = 42
+val x158 = x154 + 1
+val x159 = x158 / 1
+val x160 = x158 - x159
+val x161 = x16(0) = x160
+x161
+} else {
+val x163 = x16(0)
+val x14 = px14 // static data: Array(0)
+val x164 = x14(x163) = 42
+val x165 = x163 + 1
+val x166 = x16(0) = x165
+val x167 = x163 == 0
+val x171 = if (x167) {
+val x168 = x15(0) = true
+val x169 = x16(0) = 0
+x169
+} else {
+()
+}
+x171
+}
+val x174 = println("----")
+val x175 = x15(0)
+val x196 = if (x175) {
+val x177 = x16(0)
+val x14 = px14 // static data: Array(0)
+val x178 = x14(x177)
+val x179 = println(x178)
+val x180 = x14(x177) = 6
+val x181 = x177 + 1
+val x182 = x181 / 1
+val x183 = x181 - x182
+val x184 = x16(0) = x183
+x184
+} else {
+val x186 = x16(0)
+val x14 = px14 // static data: Array(0)
+val x187 = x14(x186) = 6
+val x188 = x186 + 1
+val x189 = x16(0) = x188
+val x190 = x186 == 0
+val x194 = if (x190) {
+val x191 = x15(0) = true
+val x192 = x16(0) = 0
+x192
+} else {
+()
+}
+x194
+}
+val x197 = x15(0)
+val x218 = if (x197) {
+val x199 = x16(0)
+val x14 = px14 // static data: Array(0)
+val x200 = x14(x199)
+val x201 = println(x200)
+val x202 = x14(x199) = 7
+val x203 = x199 + 1
+val x204 = x203 / 1
+val x205 = x203 - x204
+val x206 = x16(0) = x205
+x206
+} else {
+val x208 = x16(0)
+val x14 = px14 // static data: Array(0)
+val x209 = x14(x208) = 7
+val x210 = x208 + 1
+val x211 = x16(0) = x210
+val x212 = x208 == 0
+val x216 = if (x212) {
+val x213 = x15(0) = true
+val x214 = x16(0) = 0
+x214
+} else {
+()
+}
+x216
+}
+val x220 = px220 // static data: Array(false)
+val x222 = x220(0)
+val x221 = px221 // static data: Array(0)
+val x244 = if (x222) {
+val x224 = x221(0)
+val x219 = px219 // static data: Array(0,0,0)
+val x225 = x219(x224)
+val x226 = println(x225)
+val x227 = x219(x224) = 0
+val x228 = x224 + 1
+val x229 = x228 / 3
+val x230 = 3 * x229
+val x231 = x228 - x230
+val x232 = x221(0) = x231
+x232
+} else {
+val x234 = x221(0)
+val x219 = px219 // static data: Array(0,0,0)
+val x235 = x219(x234) = 0
+val x236 = x234 + 1
+val x237 = x221(0) = x236
+val x238 = x234 == 2
+val x242 = if (x238) {
+val x239 = x220(0) = true
+val x240 = x221(0) = 0
+x240
+} else {
+()
+}
+x242
+}
+val x245 = x220(0)
+val x267 = if (x245) {
+val x247 = x221(0)
+val x219 = px219 // static data: Array(0,0,0)
+val x248 = x219(x247)
+val x249 = println(x248)
+val x250 = x219(x247) = 1
+val x251 = x247 + 1
+val x252 = x251 / 3
+val x253 = 3 * x252
+val x254 = x251 - x253
+val x255 = x221(0) = x254
+x255
+} else {
+val x257 = x221(0)
+val x219 = px219 // static data: Array(0,0,0)
+val x258 = x219(x257) = 1
+val x259 = x257 + 1
+val x260 = x221(0) = x259
+val x261 = x257 == 2
+val x265 = if (x261) {
+val x262 = x220(0) = true
+val x263 = x221(0) = 0
+x263
+} else {
+()
+}
+x265
+}
+val x268 = x220(0)
+val x290 = if (x268) {
+val x270 = x221(0)
+val x219 = px219 // static data: Array(0,0,0)
+val x271 = x219(x270)
+val x272 = println(x271)
+val x273 = x219(x270) = 2
+val x274 = x270 + 1
+val x275 = x274 / 3
+val x276 = 3 * x275
+val x277 = x274 - x276
+val x278 = x221(0) = x277
+x278
+} else {
+val x280 = x221(0)
+val x219 = px219 // static data: Array(0,0,0)
+val x281 = x219(x280) = 2
+val x282 = x280 + 1
+val x283 = x221(0) = x282
+val x284 = x280 == 2
+val x288 = if (x284) {
+val x285 = x220(0) = true
+val x286 = x221(0) = 0
+x286
+} else {
+()
+}
+x288
+}
+val x291 = x220(0)
+val x313 = if (x291) {
+val x293 = x221(0)
+val x219 = px219 // static data: Array(0,0,0)
+val x294 = x219(x293)
+val x295 = println(x294)
+val x296 = x219(x293) = 3
+val x297 = x293 + 1
+val x298 = x297 / 3
+val x299 = 3 * x298
+val x300 = x297 - x299
+val x301 = x221(0) = x300
+x301
+} else {
+val x303 = x221(0)
+val x219 = px219 // static data: Array(0,0,0)
+val x304 = x219(x303) = 3
+val x305 = x303 + 1
+val x306 = x221(0) = x305
+val x307 = x303 == 2
+val x311 = if (x307) {
+val x308 = x220(0) = true
+val x309 = x221(0) = 0
+x309
+} else {
+()
+}
+x311
+}
+val x314 = x220(0)
+val x336 = if (x314) {
+val x316 = x221(0)
+val x219 = px219 // static data: Array(0,0,0)
+val x317 = x219(x316)
+val x318 = println(x317)
+val x319 = x219(x316) = 4
+val x320 = x316 + 1
+val x321 = x320 / 3
+val x322 = 3 * x321
+val x323 = x320 - x322
+val x324 = x221(0) = x323
+x324
+} else {
+val x326 = x221(0)
+val x219 = px219 // static data: Array(0,0,0)
+val x327 = x219(x326) = 4
+val x328 = x326 + 1
+val x329 = x221(0) = x328
+val x330 = x326 == 2
+val x334 = if (x330) {
+val x331 = x220(0) = true
+val x332 = x221(0) = 0
+x332
+} else {
+()
+}
+x334
+}
+val x337 = x220(0)
+val x359 = if (x337) {
+val x339 = x221(0)
+val x219 = px219 // static data: Array(0,0,0)
+val x340 = x219(x339)
+val x341 = println(x340)
+val x342 = x219(x339) = x0
+val x343 = x339 + 1
+val x344 = x343 / 3
+val x345 = 3 * x344
+val x346 = x343 - x345
+val x347 = x221(0) = x346
+x347
+} else {
+val x349 = x221(0)
+val x219 = px219 // static data: Array(0,0,0)
+val x350 = x219(x349) = x0
+val x351 = x349 + 1
+val x352 = x221(0) = x351
+val x353 = x349 == 2
+val x357 = if (x353) {
+val x354 = x220(0) = true
+val x355 = x221(0) = 0
+x355
+} else {
+()
+}
+x357
+}
+val x360 = x220(0) = false
+val x361 = x221(0) = 0
+val x362 = println("flush")
+val x363 = x220(0)
+val x385 = if (x363) {
+val x365 = x221(0)
+val x219 = px219 // static data: Array(0,0,0)
+val x366 = x219(x365)
+val x367 = println(x366)
+val x368 = x219(x365) = 42
+val x369 = x365 + 1
+val x370 = x369 / 3
+val x371 = 3 * x370
+val x372 = x369 - x371
+val x373 = x221(0) = x372
+x373
+} else {
+val x375 = x221(0)
+val x219 = px219 // static data: Array(0,0,0)
+val x376 = x219(x375) = 42
+val x377 = x375 + 1
+val x378 = x221(0) = x377
+val x379 = x375 == 2
+val x383 = if (x379) {
+val x380 = x220(0) = true
+val x381 = x221(0) = 0
+x381
+} else {
+()
+}
+x383
+}
+val x386 = println("----")
+val x387 = println("====")
+x387
 }
 }
 /*****************************************
@@ -64,3 +518,34 @@ flush
 2
 flush
 ----
+====
+-2
+-1
+0
+1
+2
+3
+4
+5
+flush
+-2
+-1
+42
+----
+7
+0
+1
+2
+3
+4
+flush
+----
+42
+6
+42
+0
+1
+2
+flush
+----
+====
