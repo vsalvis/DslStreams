@@ -76,13 +76,11 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     }
   }
   
-  // TODO sneaky flatMap
   class RepFlatMapOp[A, B](f: Rep[A] => List[Rep[B]], next: RepStreamOp[B]) extends RepStreamOp[A] {
     def onData(data: Rep[A]) = f(data) foreach next.onData
   
     def flush = next.flush
   }
-  
     
   class RepDropOp[A](n: Int, next: RepStreamOp[A]) extends RepStreamOp[A] {
     val state = new Array[Int](1)
