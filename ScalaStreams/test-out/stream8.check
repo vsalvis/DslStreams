@@ -1,257 +1,116 @@
+error: illegal sharing of mutable objects Sym(69)
+at Sym(70)=Reflect(ArrayUpdate(Sym(1),Const(0),Sym(69)),Summary(false,false,false,false,false,List(Sym(69)),List(Sym(69)),List(Sym(1)),List(Sym(1))),List(Sym(2), Sym(13), Sym(24), Sym(35), Sym(46), Sym(57), Sym(69)))
 /*****************************************
   Emitting Generated Code                  
 *******************************************/
-class test8 extends ((Int)=>(Unit)) {
+class test8(px1:Array[scala.collection.mutable.HashMap[Int, scala.collection.immutable.List[Int]]]) extends ((Int)=>(Unit)) {
 def apply(x0:Int): Unit = {
-val x1 = collection.mutable.HashMap[Int,scala.collection.immutable.List[Int]]()
-val x2 = x1.contains(0)
-val x7 = List(0)
-val x10 = if (x2) {
-val x3 = x1(0)
-val x4 = 0 :: x3
-val x5 = x1(0) = x4
-x5
+val x1 = px1 // static data: Array(Map())
+val x2 = x1(0)
+val x3 = x2.contains(0)
+val x11 = if (x3) {
+val x4 = x2(0)
+val x5 = 0 :: x4
+val x6 = x2(0) = x5
+x6
 } else {
-val x8 = x1(0) = x7
-x8
+val x8 = List(0)
+val x9 = x2(0) = x8
+x9
 }
-val x11 = println(x1)
-val x12 = x1.contains(2)
-val x20 = if (x12) {
-val x13 = x1(2)
-val x14 = 1 :: x13
-val x15 = x1(2) = x14
-x15
+val x12 = println(x2)
+val x13 = x1(0)
+val x14 = x13.contains(2)
+val x22 = if (x14) {
+val x15 = x13(2)
+val x16 = 1 :: x15
+val x17 = x13(2) = x16
+x17
 } else {
-val x17 = List(1)
-val x18 = x1(2) = x17
-x18
+val x19 = List(1)
+val x20 = x13(2) = x19
+x20
 }
-val x21 = println(x1)
-val x22 = x1.contains(4)
-val x30 = if (x22) {
-val x23 = x1(4)
-val x24 = 2 :: x23
-val x25 = x1(4) = x24
-x25
-} else {
-val x27 = List(2)
-val x28 = x1(4) = x27
+val x23 = println(x13)
+val x24 = x1(0)
+val x25 = x24.contains(4)
+val x33 = if (x25) {
+val x26 = x24(4)
+val x27 = 2 :: x26
+val x28 = x24(4) = x27
 x28
-}
-val x31 = println(x1)
-val x32 = x1.contains(6)
-val x40 = if (x32) {
-val x33 = x1(6)
-val x34 = 3 :: x33
-val x35 = x1(6) = x34
-x35
 } else {
-val x37 = List(3)
-val x38 = x1(6) = x37
-x38
+val x30 = List(2)
+val x31 = x24(4) = x30
+x31
 }
-val x41 = println(x1)
-val x42 = x1.contains(8)
-val x50 = if (x42) {
-val x43 = x1(8)
-val x44 = 4 :: x43
-val x45 = x1(8) = x44
-x45
+val x34 = println(x24)
+val x35 = x1(0)
+val x36 = x35.contains(6)
+val x44 = if (x36) {
+val x37 = x35(6)
+val x38 = 3 :: x37
+val x39 = x35(6) = x38
+x39
 } else {
-val x47 = List(4)
-val x48 = x1(8) = x47
-x48
+val x41 = List(3)
+val x42 = x35(6) = x41
+x42
 }
-val x51 = println(x1)
-val x52 = 2 * x0
-val x53 = x1.contains(x52)
-val x61 = if (x53) {
-val x54 = x1(x52)
-val x55 = x0 :: x54
-val x56 = x1(x52) = x55
-x56
+val x45 = println(x35)
+val x46 = x1(0)
+val x47 = x46.contains(8)
+val x55 = if (x47) {
+val x48 = x46(8)
+val x49 = 4 :: x48
+val x50 = x46(8) = x49
+x50
 } else {
-val x58 = List(x0)
-val x59 = x1(x52) = x58
-x59
+val x52 = List(4)
+val x53 = x46(8) = x52
+x53
 }
-val x62 = println(x1)
-val x63 = x1.clear()
-val x64 = println("flush")
-val x65 = x1.contains(84)
-val x73 = if (x65) {
-val x66 = x1(84)
-val x67 = 42 :: x66
-val x68 = x1(84) = x67
-x68
+val x56 = println(x46)
+val x57 = x1(0)
+val x58 = 2 * x0
+val x59 = x57.contains(x58)
+val x67 = if (x59) {
+val x60 = x57(x58)
+val x61 = x0 :: x60
+val x62 = x57(x58) = x61
+x62
 } else {
-val x70 = List(42)
-val x71 = x1(84) = x70
-x71
+val x64 = List(x0)
+val x65 = x57(x58) = x64
+x65
 }
-val x74 = println(x1)
-val x75 = println("----")
-val x76 = x1.contains(0)
-val x83 = if (x76) {
-val x77 = x1(0)
-val x78 = 0 :: x77
-val x79 = x1(0) = x78
+val x68 = println(x57)
+val x69 = collection.mutable.HashMap[Int,scala.collection.immutable.List[Int]]()
+val x70 = x1(0) = x69
+val x71 = println("flush")
+val x72 = x1(0)
+val x73 = x72.contains(84)
+val x81 = if (x73) {
+val x74 = x72(84)
+val x75 = 42 :: x74
+val x76 = x72(84) = x75
+x76
+} else {
+val x78 = List(42)
+val x79 = x72(84) = x78
 x79
-} else {
-val x81 = x1(0) = x7
-x81
 }
-val x84 = println(x1)
-val x85 = x1.contains(2)
-val x92 = if (x85) {
-val x86 = x1(2)
-val x87 = 1 :: x86
-val x88 = x1(2) = x87
-x88
-} else {
-val x17 = List(1)
-val x90 = x1(2) = x17
-x90
-}
-val x93 = println(x1)
-val x94 = x1.contains(4)
-val x101 = if (x94) {
-val x95 = x1(4)
-val x96 = 2 :: x95
-val x97 = x1(4) = x96
-x97
-} else {
-val x27 = List(2)
-val x99 = x1(4) = x27
-x99
-}
-val x102 = println(x1)
-val x103 = x1.contains(6)
-val x110 = if (x103) {
-val x104 = x1(6)
-val x105 = 3 :: x104
-val x106 = x1(6) = x105
-x106
-} else {
-val x37 = List(3)
-val x108 = x1(6) = x37
-x108
-}
-val x111 = println(x1)
-val x112 = x1.contains(8)
-val x119 = if (x112) {
-val x113 = x1(8)
-val x114 = 4 :: x113
-val x115 = x1(8) = x114
-x115
-} else {
-val x47 = List(4)
-val x117 = x1(8) = x47
-x117
-}
-val x120 = println(x1)
-val x121 = x1.contains(x52)
-val x128 = if (x121) {
-val x122 = x1(x52)
-val x123 = x0 :: x122
-val x124 = x1(x52) = x123
-x124
-} else {
-val x58 = List(x0)
-val x126 = x1(x52) = x58
-x126
-}
-val x129 = println(x1)
-val x130 = x1.clear()
-val x131 = println("flush")
-val x132 = x1.contains(84)
-val x139 = if (x132) {
-val x133 = x1(84)
-val x134 = 42 :: x133
-val x135 = x1(84) = x134
-x135
-} else {
-val x70 = List(42)
-val x137 = x1(84) = x70
-x137
-}
-val x140 = println(x1)
-val x141 = println("----")
-val x142 = List()
-var x143: scala.collection.immutable.List[scala.collection.immutable.List[Int]] = x142
-var x144: scala.collection.immutable.List[scala.collection.immutable.List[Int]] = x142
-var x145: scala.collection.immutable.List[Int] = x142
-var x146: scala.collection.immutable.List[Int] = x142
-x145 = x7
-x145 = x142
-val x150 = List(0,0)
-val x151 = List(x150)
-x143 = x151
-x143 = x142
-val x155 = List(0,0,0)
-val x156 = println(x155)
-x145 = x7
-x145 = x142
-val x160 = List(0,1)
-val x161 = List(x160)
-x143 = x161
-x143 = x142
-val x165 = List(0,1,2)
-val x166 = println(x165)
-x145 = x7
-x145 = x142
-val x170 = List(0,2)
-val x171 = List(x170)
-x143 = x171
-x143 = x142
-val x175 = List(0,2,4)
-val x176 = println(x175)
-x145 = x7
-x145 = x142
-val x180 = List(0,3)
-val x181 = List(x180)
-x143 = x181
-x143 = x142
-val x186 = List(0,3,6)
-val x187 = println(x186)
-x145 = x7
-x145 = x142
-val x191 = List(0,4)
-val x192 = List(x191)
-x143 = x192
-x143 = x142
-val x197 = List(0,4,8)
-val x198 = println(x197)
-x145 = x7
-x145 = x142
-val x202 = List(0,x0)
-val x203 = List(x202)
-x143 = x203
-x143 = x142
-val x205 = x0 * 2
-val x209 = List(0,x0,x205)
-val x210 = println(x209)
-x145 = x142
-x146 = x142
-x143 = x142
-x144 = x142
-val x215 = println("flush")
-x145 = x7
-x145 = x142
-val x219 = List(0,42)
-val x220 = List(x219)
-x143 = x220
-x143 = x142
-val x225 = List(0,42,84)
-val x226 = println(x225)
-val x227 = println("----")
-x227
+val x82 = println(x72)
+val x83 = println("----")
+val x84 = println("====")
+x84
 }
 }
 /*****************************************
   End of Generated Code                  
 *******************************************/
+error: illegal sharing of mutable objects Sym(150)
+at Sym(151)=Reflect(ArrayUpdate(Sym(87),Const(0),Sym(150)),Summary(false,false,false,false,false,List(Sym(150)),List(Sym(150)),List(Sym(87)),List(Sym(87))),List(Sym(88), Sym(98), Sym(108), Sym(118), Sym(128), Sym(138), Sym(150)))
 compilation: ok
 Map(0 -> List(0))
 Map(2 -> List(1), 0 -> List(0))
@@ -262,6 +121,7 @@ Map(8 -> List(4), 2 -> List(1), 4 -> List(2), 10 -> List(5), 6 -> List(3), 0 -> 
 flush
 Map(84 -> List(42))
 ----
+====
 Map(84 -> List(42), 0 -> List(0))
 Map(2 -> List(1), 84 -> List(42), 0 -> List(0))
 Map(2 -> List(1), 4 -> List(2), 84 -> List(42), 0 -> List(0))
@@ -271,12 +131,4 @@ Map(8 -> List(4), 2 -> List(1), 4 -> List(2), 10 -> List(5), 84 -> List(42), 6 -
 flush
 Map(84 -> List(42))
 ----
-List(0, 0, 0)
-List(0, 1, 2)
-List(0, 2, 4)
-List(0, 3, 6)
-List(0, 4, 8)
-List(0, 5, 10)
-flush
-List(0, 42, 84)
-----
+====

@@ -270,31 +270,44 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
 //    }
 //  
 //    def flush = {
-//      // TODO flush all streams in the map
+//      // flush all streams in the map
 //    }
 //  }
 //  def repOnData[A: Manifest](s: Rep[RepStreamOp[A]], data: Rep[A]): Rep[RepStreamOp[A]]
 //  case class OnData[A](s: Exp[RepStreamOp[A]], data: Exp[A]) extends Def[RepStreamOp[A]]
 //  override def repOnData[A: Manifest](s: Exp[RepStreamOp[A]], data: Exp[A]) = OnData[A](s, data)
+//  override def emitNode(sym: Sym[Any], node: Def[Any]): Unit = node match {
+//    case OnData(s, data) => {
+//      emitValDef(sym, quote(s) + ".onData(" + quote(data) + ")")
+//    }
+//    case _ => super.emitNode(sym, node)
+//  }
 
   
 
-  // TODO persist Map state
+  // TODO non-mutable and illegal sharing error messages
   class RepGroupByStreamOp[A: Manifest, B: Manifest](keyFun: Rep[A] => Rep[B], next: RepStreamOp[HashMap[B, List[A]]]) extends RepStreamOp[A] {
-    val map: Rep[HashMap[B, List[A]]] = HashMap[B, List[A]]()
+    val state = new Array[scala.collection.mutable.HashMap[B, List[A]]](1)
+    state(0) = new scala.collection.mutable.HashMap[B, List[A]]()
+
     
     def onData(data: Rep[A]) = {
+      val stateR: Rep[Array[HashMap[B, List[A]]]] = staticData(state)
+      val map: Rep[HashMap[B, List[A]]] = stateR(unit(0))
+
       val key = keyFun(data)
-      if (map.contains(key)) {
-        map.update(key, data :: map(key))
+      if (map.contains(key)) { // why does hashmap_update result in "write to non-mutable Sym..."?
+        hashmap_unsafe_update(map, key, data :: map(key))
       } else {
-        map.update(key, List(data))
+        hashmap_unsafe_update(map, key, List(data))
       }
       next.onData(map)
     }
     
-    def flush = {
-      map.clear
+    def flush = { // why does hashmap_clear result in "write to non-mutable Sym..."?
+      val stateR: Rep[Array[HashMap[B, List[A]]]] = staticData(state)
+      // why does this result in "illegal sharing of mutable objects"?
+      stateR(unit(0)) = HashMap[B, List[A]]()
       next.flush
     }
   }
@@ -672,12 +685,6 @@ trait ScalaGenRepStreamOps extends ScalaGenIfThenElse with ScalaGenMiscOps with 
   val IR: RepStreamOpsExp
   import IR._
 
-  override def emitNode(sym: Sym[Any], node: Def[Any]): Unit = node match {
-    case OnData(s, data) => {
-      emitValDef(sym, quote(s) + ".onData(" + quote(data) + ")")
-    }
-    case _ => super.emitNode(sym, node)
-  }
 }
 
 

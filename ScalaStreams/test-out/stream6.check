@@ -1,97 +1,67 @@
 /*****************************************
   Emitting Generated Code                  
 *******************************************/
-class test6(px36:Array[scala.collection.immutable.List[Int]]) extends ((Int)=>(Unit)) {
+class test6(px19:Array[scala.collection.immutable.List[Int]]) extends ((Int)=>(Unit)) {
 def apply(x0:Int): Unit = {
-val x1 = println(0)
-val x2 = println(21)
-val x3 = println(42)
-val x4 = println(63)
-val x5 = println(84)
-val x6 = 2 * x0
-val x7 = 10 * x6
-val x8 = x0 + x7
-val x9 = println(x8)
-val x10 = println("flush")
-val x11 = println("flush")
-val x12 = println("flush")
-val x13 = println("flush")
+val x1 = println(10)
+val x2 = println(0)
+val x3 = println(11)
+val x4 = println(1)
+val x5 = println(12)
+val x6 = println(2)
+val x7 = println(13)
+val x8 = println(3)
+val x9 = println(14)
+val x10 = println(4)
+val x11 = x0 + 10
+val x12 = println(x11)
+val x13 = println(x0)
 val x14 = println("flush")
 val x15 = println("flush")
-val x16 = println(882)
-val x17 = println("----")
-val x18 = println(10)
-val x19 = println(0)
-val x20 = println(11)
-val x21 = println(1)
-val x22 = println(12)
-val x23 = println(2)
-val x24 = println(13)
-val x25 = println(3)
-val x26 = println(14)
-val x27 = println(4)
-val x28 = x0 + 10
-val x29 = println(x28)
-val x30 = println(x0)
-val x31 = println("flush")
-val x32 = println("flush")
-val x33 = println(52)
-val x34 = println(42)
-val x35 = println("----")
-val x36 = px36 // static data: Array(List())
-val x37 = x36(0)
-val x38 = 0 :: x37
-val x39 = x36(0) = x38
-val x40 = println(x38)
-val x41 = x36(0)
-val x42 = 1 :: x41
-val x43 = x36(0) = x42
-val x44 = println(x42)
-val x45 = x36(0)
-val x46 = 2 :: x45
-val x47 = x36(0) = x46
-val x48 = println(x46)
-val x49 = x36(0)
-val x50 = 3 :: x49
-val x51 = x36(0) = x50
-val x52 = println(x50)
-val x53 = x36(0)
-val x54 = 4 :: x53
-val x55 = x36(0) = x54
-val x56 = println(x54)
-val x57 = x36(0)
-val x58 = x0 :: x57
-val x59 = x36(0) = x58
-val x60 = println(x58)
-val x61 = List()
-val x62 = x36(0) = x61
-val x63 = println("flush")
-val x64 = x36(0)
-val x65 = 42 :: x64
-val x66 = x36(0) = x65
-val x67 = println(x65)
-val x68 = println("----")
-x68
+val x16 = println(52)
+val x17 = println(42)
+val x18 = println("----")
+val x19 = px19 // static data: Array(List())
+val x20 = x19(0)
+val x21 = 0 :: x20
+val x22 = x19(0) = x21
+val x23 = println(x21)
+val x24 = x19(0)
+val x25 = 1 :: x24
+val x26 = x19(0) = x25
+val x27 = println(x25)
+val x28 = x19(0)
+val x29 = 2 :: x28
+val x30 = x19(0) = x29
+val x31 = println(x29)
+val x32 = x19(0)
+val x33 = 3 :: x32
+val x34 = x19(0) = x33
+val x35 = println(x33)
+val x36 = x19(0)
+val x37 = 4 :: x36
+val x38 = x19(0) = x37
+val x39 = println(x37)
+val x40 = x19(0)
+val x41 = x0 :: x40
+val x42 = x19(0) = x41
+val x43 = println(x41)
+val x44 = List()
+val x45 = x19(0) = x44
+val x46 = println("flush")
+val x47 = x19(0)
+val x48 = 42 :: x47
+val x49 = x19(0) = x48
+val x50 = println(x48)
+val x51 = println("----")
+val x52 = println("====")
+x52
 }
 }
 /*****************************************
   End of Generated Code                  
 *******************************************/
 compilation: ok
-0
-21
-42
-63
-84
-105
-flush
-flush
-flush
-flush
-flush
-flush
-882
-----
 10
 0
 11
@@ -118,20 +88,7 @@ List(5, 4, 3, 2, 1, 0)
 flush
 List(42)
 ----
-0
-21
-42
-63
-84
-105
-flush
-flush
-flush
-flush
-flush
-flush
-882
-----
+====
 10
 0
 11
@@ -158,3 +115,4 @@ List(5, 4, 3, 2, 1, 0, 42)
 flush
 List(42)
 ----
+====

@@ -1,0 +1,60 @@
+/*****************************************
+  Emitting Generated Code                  
+*******************************************/
+class test9 extends ((Int)=>(Unit)) {
+def apply(x0:Int): Unit = {
+val x1 = println(0)
+val x2 = println(21)
+val x3 = println(42)
+val x4 = println(63)
+val x5 = println(84)
+val x6 = 2 * x0
+val x7 = 10 * x6
+val x8 = x0 + x7
+val x9 = println(x8)
+val x10 = println("flush")
+val x11 = println("flush")
+val x12 = println("flush")
+val x13 = println("flush")
+val x14 = println("flush")
+val x15 = println("flush")
+val x16 = println(882)
+val x17 = println("----")
+val x18 = println("====")
+x18
+}
+}
+/*****************************************
+  End of Generated Code                  
+*******************************************/
+compilation: ok
+0
+21
+42
+63
+84
+105
+flush
+flush
+flush
+flush
+flush
+flush
+882
+----
+====
+0
+21
+42
+63
+84
+105
+flush
+flush
+flush
+flush
+flush
+flush
+882
+----
+====

@@ -1,0 +1,102 @@
+/*****************************************
+  Emitting Generated Code                  
+*******************************************/
+class test10 extends ((Int)=>(Unit)) {
+def apply(x0:Int): Unit = {
+val x1 = List()
+var x2: scala.collection.immutable.List[scala.collection.immutable.List[Int]] = x1
+var x3: scala.collection.immutable.List[scala.collection.immutable.List[Int]] = x1
+var x4: scala.collection.immutable.List[Int] = x1
+var x5: scala.collection.immutable.List[Int] = x1
+val x6 = List(0)
+x4 = x6
+x4 = x1
+val x10 = List(0,0)
+val x11 = List(x10)
+x2 = x11
+x2 = x1
+val x15 = List(0,0,0)
+val x16 = println(x15)
+x4 = x6
+x4 = x1
+val x20 = List(0,1)
+val x21 = List(x20)
+x2 = x21
+x2 = x1
+val x26 = List(0,1,2)
+val x27 = println(x26)
+x4 = x6
+x4 = x1
+val x31 = List(0,2)
+val x32 = List(x31)
+x2 = x32
+x2 = x1
+val x37 = List(0,2,4)
+val x38 = println(x37)
+x4 = x6
+x4 = x1
+val x42 = List(0,3)
+val x43 = List(x42)
+x2 = x43
+x2 = x1
+val x48 = List(0,3,6)
+val x49 = println(x48)
+x4 = x6
+x4 = x1
+val x53 = List(0,4)
+val x54 = List(x53)
+x2 = x54
+x2 = x1
+val x59 = List(0,4,8)
+val x60 = println(x59)
+x4 = x6
+x4 = x1
+val x64 = List(0,x0)
+val x65 = List(x64)
+x2 = x65
+x2 = x1
+val x67 = x0 * 2
+val x71 = List(0,x0,x67)
+val x72 = println(x71)
+x4 = x1
+x5 = x1
+x2 = x1
+x3 = x1
+val x77 = println("flush")
+x4 = x6
+x4 = x1
+val x81 = List(0,42)
+val x82 = List(x81)
+x2 = x82
+x2 = x1
+val x87 = List(0,42,84)
+val x88 = println(x87)
+val x89 = println("----")
+val x90 = println("====")
+x90
+}
+}
+/*****************************************
+  End of Generated Code                  
+*******************************************/
+compilation: ok
+List(0, 0, 0)
+List(0, 1, 2)
+List(0, 2, 4)
+List(0, 3, 6)
+List(0, 4, 8)
+List(0, 5, 10)
+flush
+List(0, 42, 84)
+----
+====
+List(0, 0, 0)
+List(0, 1, 2)
+List(0, 2, 4)
+List(0, 3, 6)
+List(0, 4, 8)
+List(0, 5, 10)
+flush
+List(0, 42, 84)
+----
+====

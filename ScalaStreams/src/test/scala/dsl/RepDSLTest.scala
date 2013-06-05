@@ -101,22 +101,17 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     println(unit("===="))
   }
 
-def test6(i: Rep[Int]) = {
-// TODO why can't I use IfThenElse here?
-    //testRepStream(i, new RepGroupByOp[Int, Int]({x => x * unit(3)}, {x => if (x < unit(10)) { new RepMapOp[Int, Int]({x => -x}, new RepPrintOp[Int]) } else { new RepPrintOp[Int] }}))
-    testRepStream(i, new RepGroupByOp[Int, Int]({x => 2 * x}, {k => new RepMapOp[Int, Int]({x => x + unit(10) * k}, new RepPrintOp[Int])}))
+  def test6(i: Rep[Int]) = {
     testRepStream(i, new RepDuplicateOp[Int](new RepMapOp[Int, Int]({x => x + unit(10)}, new RepPrintOp[Int]), new RepMapOp[Int, Int]({x => x}, new RepPrintOp[Int])))
     testRepStream(i, new RepAggregatorOp[Int](new RepPrintOp[List[Int]]))
+    println(unit("===="))
   }
 
   def test6b(i: Rep[Int]) = {
-// TODO why can't I use IfThenElse here?
-    //testRepStream(i, new RepGroupByOp[Int, Int]({x => x * unit(3)}, {x => if (x < unit(10)) { new RepMapOp[Int, Int]({x => -x}, new RepPrintOp[Int]) } else { new RepPrintOp[Int] }}))
-    testRepStream(i, RepStream[Int].groupBy({x => 2 * x}, {k: Rep[Int] => RepStream[Int].map({x => x + unit(10) * k}).print}))
     testRepStream(i, RepStream[Int].duplicate(RepStream[Int].map({x => x + unit(10)}).print, RepStream[Int].map({x => x}).print))
     testRepStream(i, RepStream[Int].aggregate().print)
+    println(unit("===="))
   }
-
 
   def test7(i: Rep[Int]) = {
     // TODO can remove unused Variables/stores?
@@ -198,19 +193,40 @@ def test6(i: Rep[Int]) = {
   def test8(i: Rep[Int]) = {
     val s = new RepGroupByStreamOp[Int, Int]({x => 2 * x}, new RepPrintOp[HashMap[Int, List[Int]]]) 
     testRepStream(i, s)
-    testRepStream(i, s)
-    
-    testRepStream(i, new RepMultiSplitOp[Int, Int](3, {(s, n) => new RepMapOp[Int, Int]({x => x * unit(n)}, s)},
-        new RepPrintOp[List[Int]]))
+    println(unit("===="))
   }
   
   def test8b(i: Rep[Int]) = {
     val s = RepStream[Int].groupByStream({x => 2 * x}).print 
     testRepStream(i, s)
-    testRepStream(i, s)
-    
-    testRepStream(i, RepStream[Int].multiSplit[Int](3, {(s, n) => RepStream[Int].map({x => x * unit(n)}).into(s)}).print)
+    println(unit("===="))
   }
+  
+  def test9(i: Rep[Int]) = {
+// TODO why can't I use IfThenElse here?
+    //testRepStream(i, new RepGroupByOp[Int, Int]({x => x * unit(3)}, {x => if (x < unit(10)) { new RepMapOp[Int, Int]({x => -x}, new RepPrintOp[Int]) } else { new RepPrintOp[Int] }}))
+    testRepStream(i, new RepGroupByOp[Int, Int]({x => 2 * x}, {k => new RepMapOp[Int, Int]({x => x + unit(10) * k}, new RepPrintOp[Int])}))
+    println(unit("===="))
+  }
+
+  def test9b(i: Rep[Int]) = {
+// TODO why can't I use IfThenElse here?
+    //testRepStream(i, new RepGroupByOp[Int, Int]({x => x * unit(3)}, {x => if (x < unit(10)) { new RepMapOp[Int, Int]({x => -x}, new RepPrintOp[Int]) } else { new RepPrintOp[Int] }}))
+    testRepStream(i, RepStream[Int].groupBy({x => 2 * x}, {k: Rep[Int] => RepStream[Int].map({x => x + unit(10) * k}).print}))
+    println(unit("===="))
+  }
+
+  def test10(i: Rep[Int]) = {
+    testRepStream(i, new RepMultiSplitOp[Int, Int](3, {(s, n) => new RepMapOp[Int, Int]({x => x * unit(n)}, s)},
+        new RepPrintOp[List[Int]]))
+    println(unit("===="))
+  }
+
+  def test10b(i: Rep[Int]) = {
+    testRepStream(i, RepStream[Int].multiSplit[Int](3, {(s, n) => RepStream[Int].map({x => x * unit(n)}).into(s)}).print)
+    println(unit("===="))
+  }
+
 
 /* 
     val op24 = new AssertEqualsOp[List[(Int, Int)]](((2, 2) :: Nil) :: ((1,1) :: Nil) :: ((3,3) :: Nil) :: ((4,4) :: Nil) :: ((1,1) :: (1,1) :: Nil) :: Nil, "equiJoin")
@@ -437,7 +453,6 @@ class TestRepStreamOps extends FileDiffSuite {
         val test = compile(test6)
         test(5)
         test(5)
-
       }
     }
     assertFileEqualsCheck(prefix+"stream6")
@@ -457,7 +472,6 @@ class TestRepStreamOps extends FileDiffSuite {
         val test = compile(test6b)
         test(5)
         test(5)
-
       }
     }
     assertFileEqualsCheck(prefix+"stream6")
@@ -514,7 +528,7 @@ class TestRepStreamOps extends FileDiffSuite {
         codegen.emitSource(test8 _ , "test8", printWriter)
         val test = compile(test8)
         test(5)
-
+        test(5)
       }
     }
     assertFileEqualsCheck(prefix+"stream8")
@@ -533,9 +547,85 @@ class TestRepStreamOps extends FileDiffSuite {
         codegen.emitSource(test8b _ , "test8", printWriter)
         val test = compile(test8b)
         test(5)
-
+        test(5)
       }
     }
     assertFileEqualsCheck(prefix+"stream8")
+  }
+  
+  def testRepStream9 = {
+    withOutFile(prefix+"stream9"){
+      new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+        with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
+
+        val printWriter = new java.io.PrintWriter(System.out)
+
+        val codegen = new ScalaGenRepStreamOps with ScalaGenNumericOps
+          with ScalaGenOrderingOps { val IR: self.type = self }
+
+        codegen.emitSource(test9 _ , "test9", printWriter)
+        val test = compile(test9)
+        test(5)
+        test(5)
+      }
+    }
+    assertFileEqualsCheck(prefix+"stream9")
+  }
+  
+  def testRepStream9b = {
+    withOutFile(prefix+"stream9"){
+      new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+        with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
+
+        val printWriter = new java.io.PrintWriter(System.out)
+
+        val codegen = new ScalaGenRepStreamOps with ScalaGenNumericOps
+          with ScalaGenOrderingOps { val IR: self.type = self }
+
+        codegen.emitSource(test9b _ , "test9", printWriter)
+        val test = compile(test9b)
+        test(5)
+        test(5)
+      }
+    }
+    assertFileEqualsCheck(prefix+"stream9")
+  }
+  
+  def testRepStream10 = {
+    withOutFile(prefix+"stream10"){
+      new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+        with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
+
+        val printWriter = new java.io.PrintWriter(System.out)
+
+        val codegen = new ScalaGenRepStreamOps with ScalaGenNumericOps
+          with ScalaGenOrderingOps { val IR: self.type = self }
+
+        codegen.emitSource(test10 _ , "test10", printWriter)
+        val test = compile(test10)
+        test(5)
+        test(5)
+      }
+    }
+    assertFileEqualsCheck(prefix+"stream10")
+  }
+  
+  def testRepStream10b = {
+    withOutFile(prefix+"stream10"){
+      new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+        with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
+
+        val printWriter = new java.io.PrintWriter(System.out)
+
+        val codegen = new ScalaGenRepStreamOps with ScalaGenNumericOps
+          with ScalaGenOrderingOps { val IR: self.type = self }
+
+        codegen.emitSource(test10b _ , "test10", printWriter)
+        val test = compile(test10b)
+        test(5)
+        test(5)
+      }
+    }
+    assertFileEqualsCheck(prefix+"stream10")
   }
 }
