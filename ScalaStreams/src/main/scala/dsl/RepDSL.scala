@@ -589,11 +589,10 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     def groupBy[K](keyF: Rep[B] => Rep[K], streamF: Rep[K] => RepStreamOp[B]) = {
       self.into(new RepGroupByOp(keyF, streamF))
     }
-    // TODO don't have Rep[RepStream], what to do
-//    def multiZipWith(num: Int, others: List[RepStream[A,B]], next: RepStreamOp[List[B]]) = {
-//      val list = RepStreamFunctions.multiZipWith(num, next)
-//      self.into(list(0)) :: others.zip(list.drop(1)).map({x => x._1.into(x._2)})
-//    }
+    def multiZipWith(num: Int, others: scala.collection.immutable.List[RepStream[A,B]], next: RepStreamOp[List[B]]) = {
+      val list = RepStreamFunctions.multiZipWith(num, next)
+      self.into(list(0)) :: others.zip(list.drop(1)).map({x => x._1.into(x._2)})
+    }
     def zipWith[C,D: Manifest](other: RepStream[C,D], next: RepStreamOp[Pair[B, D]]) = {
       val (a, b) = RepStreamFunctions.zipWith(next)
       (self.into(a), other.into(b))

@@ -158,35 +158,19 @@ trait RepStreamProg extends RepStreamOps with NumericOps
 
     val l0 = RepStreamFunctions.multiZipWith[Int](0, new RepPrintOp[List[Int]])
     println(unit(l0.length == 0))
-    val l1 = RepStreamFunctions.multiZipWith[Int](1, new RepPrintOp[List[Int]])
+
+    val l1 = RepStream[Int].multiZipWith(1, Nil, RepStream[List[Int]].print)
     println(unit(l1.length == 1))
     testRepStream(i, l1(0))
-    val l2 = RepStreamFunctions.multiZipWith[Int](2, new RepPrintOp[List[Int]])
+    val l2 = RepStream[Int].multiZipWith(2, scala.collection.immutable.List(RepStream[Int]), RepStream[List[Int]].print)
     println(unit(l2.length == 2))
     testRepStream(i, l2(0))
     testRepStream(i, new RepMapOp[Int, Int]({x => x + unit(1)}, l2(1)))
-    val l3 = RepStreamFunctions.multiZipWith[Int](3, new RepPrintOp[List[Int]])
+    val l3 = RepStream[Int].multiZipWith(3, scala.collection.immutable.List(RepStream[Int], RepStream[Int]), RepStream[List[Int]].print)
     println(unit(l3.length == 3))
     testRepStream(i, l3(0))
     testRepStream(i, new RepMapOp[Int, Int]({x => x + unit(1)}, l3(1)))
     testRepStream(i, new RepMapOp[Int, Int]({x => x + unit(2)}, l3(2)))
-
-    // In the API, multiZipWith zips at least self, so num = 0 not valid
-//    val l0 = RepStream[Int].multiZipWith(0, Nil, RepStream[List[Int]].print)
-//    println(unit(l0.length == 0))
-    // TODO List[RepStream] without Rep??
-//    val l1 = RepStream[Int].multiZipWith(1, Nil, RepStream[List[Int]].print)
-//    println(unit(l1.length == 1))
-//    testRepStream(i, l1(0))
-//    val l2 = RepStream[Int].multiZipWith(2, List(RepStream[Int].map({x => x + unit(1)})), RepStream[List[Int]].print)
-//    println(unit(l2.length == 2))
-//    testRepStream(i, l2(0))
-//    testRepStream(i, l2(1))
-//    val l3 = RepStream[Int].multiZipWith(3, List(RepStream[Int].map({x => x + unit(1)}), RepStream[Int].map({x => x + unit(2)})), RepStream[List[Int]].print)
-//    println(unit(l3.length == 3))
-//    testRepStream(i, l3(0))
-//    testRepStream(i, l3(1))
-//    testRepStream(i, l3(2))
 
   }
     
