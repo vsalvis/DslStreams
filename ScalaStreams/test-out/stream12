@@ -1,0 +1,40 @@
+/*****************************************
+  Emitting Generated Code                  
+*******************************************/
+class test12(px4:Array[dsl.TestRepStreamOps$$anonfun$testRepStream12b$1$$anon$22@35be1485.type#dsl.RepStreamOps$RepStreamOp[Int]]) extends ((Int)=>(Unit)) {
+def apply(x0:Int): Unit = {
+val x1 = List()
+var x2: scala.collection.immutable.List[Int] = x1
+var x3: scala.collection.immutable.List[Int] = x1
+val x4 = px4 // static data: Array(dsl.RepStreamOps$RepStreamFunctions$$anon$1@26d7284f,dsl.RepStreamOps$RepMapOp@77976e74)
+val x5 = x4(0)
+val x7 = x4(1)
+val x9 = x4(0)
+val x11 = x4(1)
+val x13 = x4(0)
+val x15 = x4(1)
+val x17 = x4(0)
+val x19 = x4(1)
+val x21 = x4(0)
+val x23 = x4(1)
+val x25 = x4(0)
+val x27 = x4(1)
+val x29 = x4(0)
+val x31 = x4(1)
+val x33 = x4(0)
+val x35 = x4(1)
+val x37 = println("----")
+x37
+}
+}
+/*****************************************
+  End of Generated Code                  
+*******************************************/
+<stdin>:4: error: Invalid literal number
+class staged$0(px42:Array[dsl.TestRepStreamOps$$anonfun$testRepStream12b$1$$anon$22@35be1485.type#dsl.RepStreamOps$RepStreamOp[Int]]) extends ((Int)=>(Unit)) {
+                                                                                    ^
+<stdin>:32: error: ']' expected but eof found.
+*******************************************/
+                                            ^
+two errors found
+compilation: had errors

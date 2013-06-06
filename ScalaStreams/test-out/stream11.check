@@ -1,0 +1,34 @@
+/*****************************************
+  Emitting Generated Code                  
+*******************************************/
+class test11 extends ((Int)=>(Unit)) {
+def apply(x0:Int): Unit = {
+val x1 = List()
+var x2: scala.collection.immutable.List[Int] = x1
+var x3: scala.collection.immutable.List[Int] = x1
+val x4 = List(1)
+x2 = x4
+val x7 = List(1,2)
+x2 = x7
+val x9 = x0 + 1
+val x11 = List(1,2,x9)
+x2 = x11
+val x13 = List(2,x9)
+x2 = x13
+val x15 = (1,20)
+val x16 = println(x15)
+val x10 = List(x9)
+x2 = x10
+val x18 = (2,21)
+val x19 = println(x18)
+()
+}
+}
+/*****************************************
+  End of Generated Code                  
+*******************************************/
+compilation: ok
+(1,20)
+(2,21)
+(1,20)
+(2,21)

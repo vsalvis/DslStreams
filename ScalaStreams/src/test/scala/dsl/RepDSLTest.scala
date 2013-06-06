@@ -227,7 +227,41 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     println(unit("===="))
   }
 
+  def test11(i: Rep[Int]) = {
+    val (s1, s2) = RepStreamFunctions.zipWith[Int, Int](new RepPrintOp[(Int, Int)])
+    val m1 = new RepMapOp[Int, Int]({x => x + 1}, s1)
+    val m2 = new RepMapOp[Int, Int]({x => x + 10}, s2)
 
+    m1.onData(unit(0))
+    m1.onData(unit(1))
+    m1.onData(i)
+    m2.onData(unit(10))
+    m2.onData(unit(11))
+  }
+  
+  def test11b(i: Rep[Int]) = {
+    val (s1, s2) = RepStream[Int].zipWith(RepStream[Int], RepStream[(Int, Int)].print)
+    val m1 = RepStream[Int].map({x => x + 1}).into(s1)
+    val m2 = RepStream[Int].map({x => x + 10}).into(s2)
+
+    m1.onData(unit(0))
+    m1.onData(unit(1))
+    m1.onData(i)
+    m2.onData(unit(10))
+    m2.onData(unit(11))
+  }
+  
+  def test12(i: Rep[Int]) = {
+    testRepStream(i, new RepSplitMergeOp[Int, Int, Int]({s1 => new RepMapOp[Int, Int]({x => x}, s1)},
+        {s2 => new RepMapOp[Int, Int]({x => x + 10}, s2)},
+        new RepMapOp[(Int, Int), (Int, Boolean)]({x => (x._1 + x._2, x._1 < x._2)}, new RepPrintOp[(Int, Boolean)])))
+  }
+  
+  def test12b(i: Rep[Int]) = {
+    testRepStream(i, RepStream[Int].splitMerge(RepStream[Int], RepStream[Int].map({x => x + 10}))
+        .map({x => (x._1 + x._2, x._1 < x._2)}).print)
+  }
+  
 /* 
     val op24 = new AssertEqualsOp[List[(Int, Int)]](((2, 2) :: Nil) :: ((1,1) :: Nil) :: ((3,3) :: Nil) :: ((4,4) :: Nil) :: ((1,1) :: (1,1) :: Nil) :: Nil, "equiJoin")
     val (a3, b3) = StreamFunctions.equiJoin[Int, Int, Int](x => x, x => x, op24)
@@ -628,4 +662,80 @@ class TestRepStreamOps extends FileDiffSuite {
     }
     assertFileEqualsCheck(prefix+"stream10")
   }
+  
+  def testRepStream11 = {
+    withOutFile(prefix+"stream11"){
+      new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+        with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
+
+        val printWriter = new java.io.PrintWriter(System.out)
+
+        val codegen = new ScalaGenRepStreamOps with ScalaGenNumericOps
+          with ScalaGenOrderingOps { val IR: self.type = self }
+
+        codegen.emitSource(test11 _ , "test11", printWriter)
+        val test = compile(test11)
+        test(5)
+        test(5)
+      }
+    }
+    assertFileEqualsCheck(prefix+"stream11")
+  }
+  
+  def testRepStream11b = {
+    withOutFile(prefix+"stream11"){
+      new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+        with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
+
+        val printWriter = new java.io.PrintWriter(System.out)
+
+        val codegen = new ScalaGenRepStreamOps with ScalaGenNumericOps
+          with ScalaGenOrderingOps { val IR: self.type = self }
+
+        codegen.emitSource(test11b _ , "test11", printWriter)
+        val test = compile(test11b)
+        test(5)
+        test(5)
+      }
+    }
+    assertFileEqualsCheck(prefix+"stream11")
+  }  
+  
+  def testRepStream12 = {
+    withOutFile(prefix+"stream12"){
+      new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+        with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
+
+        val printWriter = new java.io.PrintWriter(System.out)
+
+        val codegen = new ScalaGenRepStreamOps with ScalaGenNumericOps
+          with ScalaGenOrderingOps { val IR: self.type = self }
+
+        codegen.emitSource(test12 _ , "test12", printWriter)
+        val test = compile(test12)
+        test(5)
+        test(5)
+      }
+    }
+    assertFileEqualsCheck(prefix+"stream12")
+  }
+  
+  def testRepStream12b = {
+    withOutFile(prefix+"stream12"){
+      new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+        with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
+
+        val printWriter = new java.io.PrintWriter(System.out)
+
+        val codegen = new ScalaGenRepStreamOps with ScalaGenNumericOps
+          with ScalaGenOrderingOps { val IR: self.type = self }
+
+        codegen.emitSource(test12b _ , "test12", printWriter)
+        val test = compile(test12b)
+        test(5)
+        test(5)
+      }
+    }
+    assertFileEqualsCheck(prefix+"stream12")
+  }    
 }

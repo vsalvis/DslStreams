@@ -1,0 +1,75 @@
+/*****************************************
+  Emitting Generated Code                  
+*******************************************/
+class test12 extends ((Int)=>(Unit)) {
+def apply(x0:Int): Unit = {
+val x1 = List()
+var x2: scala.collection.immutable.List[Int] = x1
+var x3: scala.collection.immutable.List[Int] = x1
+val x4 = List(0)
+x2 = x4
+x2 = x1
+val x8 = (10,true)
+val x9 = println(x8)
+val x10 = List(1)
+x2 = x10
+x2 = x1
+val x14 = (12,true)
+val x15 = println(x14)
+val x16 = List(2)
+x2 = x16
+x2 = x1
+val x20 = (14,true)
+val x21 = println(x20)
+val x22 = List(3)
+x2 = x22
+x2 = x1
+val x26 = (16,true)
+val x27 = println(x26)
+val x28 = List(4)
+x2 = x28
+x2 = x1
+val x32 = (18,true)
+val x33 = println(x32)
+val x34 = List(x0)
+x2 = x34
+x2 = x1
+val x36 = x0 + 10
+val x39 = x0 + x36
+val x40 = x0 < x36
+val x41 = (x39,x40)
+val x42 = println(x41)
+x2 = x1
+x3 = x1
+val x45 = println("flush")
+val x46 = List(42)
+x2 = x46
+x2 = x1
+val x50 = (94,true)
+val x51 = println(x50)
+val x52 = println("----")
+x52
+}
+}
+/*****************************************
+  End of Generated Code                  
+*******************************************/
+compilation: ok
+(10,true)
+(12,true)
+(14,true)
+(16,true)
+(18,true)
+(20,true)
+flush
+(94,true)
+----
+(10,true)
+(12,true)
+(14,true)
+(16,true)
+(18,true)
+(20,true)
+flush
+(94,true)
+----

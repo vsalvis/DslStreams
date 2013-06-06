@@ -20,6 +20,9 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     def onData(data: Rep[A])
     def flush
   }
+//  def rep_onData[A: Manifest](s: Rep[RepStreamOp[A]], data: Rep[A]): Rep[RepStreamOp[A]]
+//  def rep_flush[A: Manifest](s: Rep[RepStreamOp[A]]): Rep[RepStreamOp[A]]
+
   
 
   class RepMapOp[A, B](f: Rep[A] => Rep[B], next: RepStreamOp[B]) extends RepStreamOp[A] {
@@ -271,17 +274,6 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
 //      // flush all streams in the map
 //    }
 //  }
-//  def repOnData[A: Manifest](s: Rep[RepStreamOp[A]], data: Rep[A]): Rep[RepStreamOp[A]]
-//  case class OnData[A](s: Exp[RepStreamOp[A]], data: Exp[A]) extends Def[RepStreamOp[A]]
-//  override def repOnData[A: Manifest](s: Exp[RepStreamOp[A]], data: Exp[A]) = OnData[A](s, data)
-//  override def emitNode(sym: Sym[Any], node: Def[Any]): Unit = node match {
-//    case OnData(s, data) => {
-//      emitValDef(sym, quote(s) + ".onData(" + quote(data) + ")")
-//    }
-//    case _ => super.emitNode(sym, node)
-//  }
-
-  
 
   // TODO non-mutable and illegal sharing error messages
   class RepGroupByStreamOp[A: Manifest, B: Manifest](keyFun: Rep[A] => Rep[B], next: RepStreamOp[HashMap[B, List[A]]]) extends RepStreamOp[A] {
@@ -304,7 +296,7 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     
     def flush = { // why does hashmap_clear result in "write to non-mutable Sym..."?
       val stateR: Rep[Array[HashMap[B, List[A]]]] = staticData(state)
-      // why does this result in "illegal sharing of mutable objects"?
+      // why does this result in "illegal sharing of mutable objects"? Still works
       stateR(unit(0)) = HashMap[B, List[A]]()
       next.flush
     }
@@ -345,7 +337,26 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     }
   }
   
-  // TODO persist state
+  // TODO persist state. Naive way isn't working because need complete staging of RepStreamOps.
+//  class RepSplitMergeOp[A: Manifest, B: Manifest, C: Manifest](first: RepStreamOp[B] => RepStreamOp[A],
+//      second: RepStreamOp[C] => RepStreamOp[A], next: RepStreamOp[(B, C)]) extends RepStreamOp[A] {
+//    val (firstZip, secondZip) = RepStreamFunctions.zipWith(next)
+//    val state = new Array[RepStreamOp[A]](2)
+//    state(0) = first(firstZip)
+//    state(1) = second(secondZip)
+//      
+//    def onData(data: Rep[A]) = {
+//      val stateR: Rep[Array[RepStreamOp[A]]] = staticData(state)
+//      rep_onData(stateR(unit(0)), data)
+//      rep_onData(stateR(unit(1)), data)
+//    }
+//    
+//    def flush = {
+//      val stateR: Rep[Array[RepStreamOp[A]]] = staticData(state)
+//      rep_flush(stateR(unit(0)))
+//      rep_flush(stateR(unit(1)))
+//    }
+//  }
   class RepSplitMergeOp[A, B: Manifest, C: Manifest](first: RepStreamOp[B] => RepStreamOp[A],
       second: RepStreamOp[C] => RepStreamOp[A], next: RepStreamOp[(B, C)]) extends RepStreamOp[A] {
     val (firstZip, secondZip) = RepStreamFunctions.zipWith(next)
@@ -360,7 +371,7 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
       firstStream.flush
       secondStream.flush
     }
-  }
+  }  
   
   // TODO persist state
   class RepMultiSplitOp[A, B: Manifest](num: Int, streams: (RepStreamOp[B], Int) => RepStreamOp[A], next: RepStreamOp[List[B]]) extends RepStreamOp[A] {
@@ -403,117 +414,65 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     }
     */
     
-    
-  // TODO why are these queues translated into Lists
+    // TODO state?
     def zipWith[A: Manifest, B: Manifest] (next: RepStreamOp[(A, B)]): (RepStreamOp[A], RepStreamOp[B]) = {
-//      val leftBuffer = new scala.collection.mutable.Queue[Rep[A]]
-//      val rightBuffer = new scala.collection.mutable.Queue[Rep[B]]
-//      var leftWaitingForFlush = false
-//      var rightWaitingForFlush = false
-//    
-//    val left = new RepStreamOp[A] {
-//      def onData(data: Rep[A]) = {
-//        if (!leftWaitingForFlush) {
-//          if (rightBuffer.isEmpty) {
-//            leftBuffer += data
-//          } else {
-//            next.onData((data, rightBuffer.dequeue))
-//          }
-//        }
-//      }
-//      
-//      def flush = {
-//        leftBuffer.clear
-//        if (leftWaitingForFlush) {
-//          leftWaitingForFlush = false
-//            next.flush
-//        } else {
-//          rightWaitingForFlush = true
-//        }
-//      }
-//    }
-//    
-//    val right = new RepStreamOp[B] {
-//      def onData(data: Rep[B]) = {
-//        if (!rightWaitingForFlush) {
-//          if (leftBuffer.isEmpty) {
-//            rightBuffer += data
-//          } else {
-//            next.onData((leftBuffer.dequeue, data))
-//          }
-//        }
-//      }
-//  
-//      def flush = {
-//        rightBuffer.clear
-//        if (rightWaitingForFlush) {
-//          rightWaitingForFlush = false
-//            next.flush
-//        } else {
-//          leftWaitingForFlush = true
-//        }
-//      }
-//      } 
-//      
-//      (left, right)
 
       var leftBuffer: Var[List[A]] = var_new(List[A]())
       var rightBuffer: Var[List[B]] = var_new(List[B]())
       var leftWaitingForFlush = false
       var rightWaitingForFlush = false
     
-    val left = new RepStreamOp[A] {
-      def onData(data: Rep[A]) = {
-        if (!leftWaitingForFlush) {
-          if (rightBuffer.isEmpty) {
-            leftBuffer = leftBuffer ++ List(data)
+      val left = new RepStreamOp[A] {
+        def onData(data: Rep[A]) = {
+          if (!leftWaitingForFlush) {
+            if (rightBuffer.isEmpty) {
+              leftBuffer = leftBuffer ++ List(data)
+            } else {
+              val right = rightBuffer.head
+              rightBuffer = rightBuffer.tail
+              next.onData((data, right))
+            }
+          }
+        }
+        
+        def flush = {
+          leftBuffer = List()
+          if (leftWaitingForFlush) {
+            leftWaitingForFlush = false
+              next.flush
           } else {
-            val right = rightBuffer.head
-            rightBuffer = rightBuffer.tail
-            next.onData((data, right))
+            rightWaitingForFlush = true
           }
         }
       }
       
-      def flush = {
-        leftBuffer = List()
-        if (leftWaitingForFlush) {
-          leftWaitingForFlush = false
-            next.flush
-        } else {
-          rightWaitingForFlush = true
-        }
-      }
-    }
-    
-    val right = new RepStreamOp[B] {
-      def onData(data: Rep[B]) = {
-        if (!rightWaitingForFlush) {
-          if (leftBuffer.isEmpty) {
-            rightBuffer = rightBuffer ++ List(data)
-          } else {
-            val left = leftBuffer.head
-            leftBuffer = leftBuffer.tail
-            next.onData((left, data))
+      val right = new RepStreamOp[B] {
+        def onData(data: Rep[B]) = {
+          if (!rightWaitingForFlush) {
+            if (leftBuffer.isEmpty) {
+              rightBuffer = rightBuffer ++ List(data)
+            } else {
+              val left = leftBuffer.head
+              leftBuffer = leftBuffer.tail
+              next.onData((left, data))
+            }
           }
         }
-      }
-  
-      def flush = {
-        rightBuffer = List()
-        if (rightWaitingForFlush) {
-          rightWaitingForFlush = false
-            next.flush
-        } else {
-          leftWaitingForFlush = true
+    
+        def flush = {
+          rightBuffer = List()
+          if (rightWaitingForFlush) {
+            rightWaitingForFlush = false
+              next.flush
+          } else {
+            leftWaitingForFlush = true
+          }
         }
-      }
       } 
       
       (left, right)
     }
     
-      // TODO better to use List[A] or List[Rep[A]]?
     def multiZipWith[A: Manifest] (num: Int, next: RepStreamOp[List[A]]): List[RepStreamOp[A]] = num match {
       case x if x <= 0 => Nil
       case 1 => new RepMapOp((x: Rep[A]) => List(x), next) :: Nil
@@ -604,6 +563,7 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
         
     // special functions: Those are not simple Streams because they have
     // multiple in- or output streams
+    
     def duplicate(first: RepStreamOp[B], second: RepStreamOp[B]) = {
       self.into(new RepDuplicateOp(first, second))
     }
@@ -671,6 +631,12 @@ trait RepStreamOpsExp extends RepStreamOps
     with HashMapOpsExp with StaticDataExp with ArrayOpsExp with CastingOpsExp with OrderingOpsExp with NumericOpsExp
     with EffectExp with FunctionsExp {
   
+//  case class OnData[A](s: Exp[RepStreamOp[A]], data: Exp[A]) extends Def[RepStreamOp[A]]
+//  override def rep_onData[A: Manifest](s: Exp[RepStreamOp[A]], data: Exp[A]) = OnData[A](s, data)
+//
+//  case class Flush[A](s: Exp[RepStreamOp[A]]) extends Def[RepStreamOp[A]]
+//  override def rep_flush[A: Manifest](s: Exp[RepStreamOp[A]]) = Flush[A](s)
+  
   // Use StaticData and Array to keep mutable state in the generated StreamOp.
   override def array_apply[T: Manifest](x: Exp[Array[T]], n: Exp[Int])(implicit pos: SourceContext): Exp[T] = reflectWrite(x)(ArrayApply(x, n))
 }
@@ -683,6 +649,13 @@ trait ScalaGenRepStreamOps extends ScalaGenIfThenElse with ScalaGenMiscOps with 
   val IR: RepStreamOpsExp
   import IR._
 
+//  override def emitNode(sym: Sym[Any], node: Def[Any]): Unit = node match {
+//    case OnData(s, data) => {
+//      emitValDef(sym, quote(s) + ".onData(" + quote(data) + ")")
+//    }
+//    case Flush(s) => {
+//      emitValDef(sym, quote(s) + ".flush()")
+//    }
+//    case _ => super.emitNode(sym, node)
+//  }
 }
-
-
