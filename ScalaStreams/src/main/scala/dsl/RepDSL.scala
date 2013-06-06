@@ -14,7 +14,8 @@ import scala.collection.mutable.HashMap
 trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
    with Variables with ListOps with EmbeddedControls with TupleOps
    with HashMapOps with StaticData with ArrayOps with CastingOps
-   with OrderingOps with NumericOps with Equal with Effects with Functions {
+   with OrderingOps with NumericOps with Equal with Effects with Functions
+   with While {
   
   abstract class RepStreamOp[A] {
     def onData(data: Rep[A])
@@ -386,33 +387,46 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
   
   object RepStreamFunctions {
   
-    // TODO Map in LMS?
-/*    def equiJoin[A, B, K] (keyFunA: A => K, keyFunB: B => K, next: StreamOp[List[(A, B)]]): (StreamOp[A], StreamOp[B]) = {
-      val aMap = new scala.collection.mutable.HashMap[K, List[A]]
-      val bMap = new scala.collection.mutable.HashMap[K, List[B]]
-  
-      class JoinOp[C](map: scala.collection.mutable.HashMap[K, List[C]], keyFun: C => K) extends StreamOp[C] {
-        def onData(data: C) = {
-          val key = keyFun(data)
-          map += ((key, data :: (map.get(key) match {
-            case None => Nil
-            case Some(list) => list
-          })))
-          (aMap.get(key), bMap.get(key)) match {
-            case (Some(as), Some(bs)) => next.onData(for (a <- as; b <- bs) yield (a, b))
-            case _ =>
-          }
-        }
-        
-        def flush = {
-          map.clear
-          next.flush // Will flush next twice if both input streams are flushed
-        }
-      }
-      
-      (new JoinOp(aMap, keyFunA), new JoinOp(bMap, keyFunB))
-    }
-    */
+    // TODO again get illegal sharing of mutable objects, on the vars, even after reconstructing the lists.
+//    def equiJoin[A: Manifest, B: Manifest, K: Manifest] (keyFunA: Rep[A] => Rep[K], keyFunB: Rep[B] => Rep[K], 
+//        next: RepStreamOp[List[(A, B)]]): (RepStreamOp[A], RepStreamOp[B]) = {
+//      val aMap = HashMap[K, List[A]]()
+//      val bMap = HashMap[K, List[B]]()
+//  
+//      class JoinOp[C: Manifest](map: Rep[HashMap[K, List[C]]], keyFun: Rep[C] => Rep[K]) extends RepStreamOp[C] {
+//        def onData(data: Rep[C]) = {
+//          val key = keyFun(data)
+//          if (map.contains(key)) {
+//            hashmap_unsafe_update(map, key, data :: map(key))
+//          } else {
+//            hashmap_unsafe_update(map, key, data :: List())
+//          }
+//          if (aMap.contains(key) && bMap.contains(key)) {
+//            var as: Var[List[A]] = var_new(List())
+//            as = as ++ aMap(key)
+//            val bsFull = bMap(key)
+//            var bs: Var[List[B]] = var_new(List())
+//            val nextAgg = new RepAggregatorOp[(A, B)](next)
+//            while (!as.isEmpty) {
+//              bs = bs ++ bsFull
+//              while (!bs.isEmpty) {
+//                nextAgg.onData((as.head, bs.head))
+//                bs = bs.tail
+//              }
+//              as = as.tail
+//            }
+//
+//          }
+//        }
+//        
+//        def flush = {
+////          map.clear()
+//          next.flush // Will flush next twice if both input streams are flushed
+//        }
+//      }
+//      
+//      (new JoinOp(aMap, keyFunA), new JoinOp(bMap, keyFunB))
+//    }
     
     // TODO state?
     def zipWith[A: Manifest, B: Manifest] (next: RepStreamOp[(A, B)]): (RepStreamOp[A], RepStreamOp[B]) = {
@@ -629,7 +643,7 @@ trait RepStreamOpsExp extends RepStreamOps
     with IfThenElseExp with IfThenElseExpOpt with BooleanOpsExp with BooleanOpsExpOpt with EqualExp with EqualExpOpt
     with MiscOpsExp with ListOpsExp with ListOpsExpOpt with ListOpsExpOpt2 with TupleOpsExp with VariablesExp with VariablesExpOpt
     with HashMapOpsExp with StaticDataExp with ArrayOpsExp with CastingOpsExp with OrderingOpsExp with NumericOpsExp
-    with EffectExp with FunctionsExp {
+    with EffectExp with FunctionsExp with WhileExp {
   
 //  case class OnData[A](s: Exp[RepStreamOp[A]], data: Exp[A]) extends Def[RepStreamOp[A]]
 //  override def rep_onData[A: Manifest](s: Exp[RepStreamOp[A]], data: Exp[A]) = OnData[A](s, data)
@@ -644,7 +658,7 @@ trait RepStreamOpsExp extends RepStreamOps
 trait ScalaGenRepStreamOps extends ScalaGenIfThenElse with ScalaGenMiscOps with ScalaGenBooleanOps with ScalaGenEqual
     with ScalaGenListOps with ScalaGenTupleOps with ScalaGenVariables with ScalaGenHashMapOps with ScalaGenStaticData
     with ScalaGenArrayOps with ScalaGenCastingOps with ScalaGenOrderingOps with ScalaGenNumericOps with ScalaGenEffect
-    with ScalaGenFunctions
+    with ScalaGenFunctions with ScalaGenWhile
 {
   val IR: RepStreamOpsExp
   import IR._

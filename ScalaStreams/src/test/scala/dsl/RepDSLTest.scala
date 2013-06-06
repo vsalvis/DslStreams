@@ -262,6 +262,19 @@ trait RepStreamProg extends RepStreamOps with NumericOps
         .map({x => (x._1 + x._2, x._1 < x._2)}).print)
   }
   
+//  def test13(i: Rep[Int]) = {
+//    val (s1, s2) = RepStreamFunctions.equiJoin[Int, Int, Int]({x => x}, {x => x}, new RepPrintOp[List[(Int, Int)]])
+//    s1.onData(unit(0))
+//    s1.onData(unit(1))
+//    s1.onData(i)
+//    s2.onData(unit(0))
+//    s2.onData(unit(1))
+//  }
+//  
+//  def test13b(i: Rep[Int]) = test13(i)
+  
+
+  
 /* 
     val op24 = new AssertEqualsOp[List[(Int, Int)]](((2, 2) :: Nil) :: ((1,1) :: Nil) :: ((3,3) :: Nil) :: ((4,4) :: Nil) :: ((1,1) :: (1,1) :: Nil) :: Nil, "equiJoin")
     val (a3, b3) = StreamFunctions.equiJoin[Int, Int, Int](x => x, x => x, op24)
@@ -738,4 +751,42 @@ class TestRepStreamOps extends FileDiffSuite {
     }
     assertFileEqualsCheck(prefix+"stream12")
   }    
+  
+//  def testRepStream13 = {
+//    withOutFile(prefix+"stream13"){
+//      new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+//        with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
+//
+//        val printWriter = new java.io.PrintWriter(System.out)
+//
+//        val codegen = new ScalaGenRepStreamOps with ScalaGenNumericOps
+//          with ScalaGenOrderingOps { val IR: self.type = self }
+//
+//        codegen.emitSource(test13 _ , "test13", printWriter)
+//        val test = compile(test13)
+//        test(5)
+//        test(5)
+//      }
+//    }
+//    assertFileEqualsCheck(prefix+"stream13")
+//  }
+//  
+//  def testRepStream13b = {
+//    withOutFile(prefix+"stream13"){
+//      new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+//        with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
+//
+//        val printWriter = new java.io.PrintWriter(System.out)
+//
+//        val codegen = new ScalaGenRepStreamOps with ScalaGenNumericOps
+//          with ScalaGenOrderingOps { val IR: self.type = self }
+//
+//        codegen.emitSource(test13b _ , "test13", printWriter)
+//        val test = compile(test13b)
+//        test(5)
+//        test(5)
+//      }
+//    }
+//    assertFileEqualsCheck(prefix+"stream13")
+//  }    
 }
