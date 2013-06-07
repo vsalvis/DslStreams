@@ -166,13 +166,23 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
   }
 
   class RepPrependOp[A: Manifest](list: List[Rep[A]], next: RepStreamOp[A])(implicit pos: SourceContext) extends RepStreamOp[A] {
-    list foreach next.onData
+    val prependedState = new Array[Boolean](1)
+    prependedState(0) = false
+
     
-    def onData(data: Rep[A]) = next.onData(data)
+    def onData(data: Rep[A]) = {
+      val prependedStateR: Rep[Array[Boolean]] = staticData(prependedState)
+      if (!prependedStateR(unit(0))) {
+        prependedStateR(unit(0)) = unit(true)
+        list foreach next.onData
+      }
+      next.onData(data)
+    }
     
     def flush = {
+      val prependedStateR: Rep[Array[Boolean]] = staticData(prependedState)
+      prependedStateR(unit(0)) = unit(false)
       next.flush
-      list foreach next.onData
     }
   }
   
