@@ -1,27 +1,49 @@
 /*****************************************
   Emitting Generated Code                  
 *******************************************/
-class test9 extends ((Int)=>(Unit)) {
+class test9(px1:Array[scala.collection.immutable.List[Any]],px9:Array[Int]) extends ((Int)=>(Unit)) {
 def apply(x0:Int): Unit = {
-val x1 = println(0)
-val x2 = println(21)
-val x3 = println(42)
-val x4 = println(63)
-val x5 = println(84)
-val x6 = 2 * x0
-val x7 = 10 * x6
-val x8 = x0 + x7
-val x9 = println(x8)
-val x10 = println("flush")
-val x11 = println("flush")
-val x12 = println("flush")
-val x13 = println("flush")
-val x14 = println("flush")
-val x15 = println("flush")
-val x16 = println(882)
-val x17 = println("----")
-val x18 = println("====")
-x18
+val x1 = px1 // static data: Array(List())
+val x2 = x1(0)
+val x6 = println(0)
+val x7 = List()
+val x8 = x1(0) = x7
+val x9 = px9 // static data: Array(0)
+val x10 = x9(0) = 0
+val x11 = x1(0)
+val x15 = println(21)
+val x16 = x1(0) = x7
+val x17 = x9(0) = 2
+val x18 = x1(0)
+val x22 = println(42)
+val x23 = x1(0) = x7
+val x24 = x9(0) = 4
+val x25 = x1(0)
+val x29 = println(63)
+val x30 = x1(0) = x7
+val x31 = x9(0) = 6
+val x32 = x1(0)
+val x36 = println(84)
+val x37 = x1(0) = x7
+val x38 = x9(0) = 8
+val x39 = x1(0)
+val x40 = 2 * x0
+val x44 = 10 * x40
+val x45 = x0 + x44
+val x46 = println(x45)
+val x47 = x1(0) = x7
+val x48 = x9(0) = x40
+val x49 = x1(0)
+val x50 = x9(0)
+val x54 = println("flush")
+val x55 = x1(0) = x7
+val x56 = x1(0)
+val x60 = println(882)
+val x61 = x1(0) = x7
+val x62 = x9(0) = 84
+val x63 = println("----")
+val x64 = println("====")
+x64
 }
 }
 /*****************************************
@@ -35,11 +57,6 @@ compilation: ok
 84
 105
 flush
-flush
-flush
-flush
-flush
-flush
 882
 ----
 ====
@@ -49,11 +66,6 @@ flush
 63
 84
 105
-flush
-flush
-flush
-flush
-flush
 flush
 882
 ----

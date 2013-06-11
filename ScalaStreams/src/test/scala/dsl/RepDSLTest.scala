@@ -34,11 +34,11 @@ trait RepStreamProg extends RepStreamOps with NumericOps
   def test1(i: Rep[Int]) = {
     testRepStream(i, new RepMapOp[Int, Int]({x: Rep[Int] => x * unit(2)}, new RepMapOp[Int, Int]({x: Rep[Int] => x + unit(1)}, new RepMapOp[Int, Int]({x: Rep[Int] => x + unit(1)}, new RepFilterOp[Int]({x: Rep[Int] => x > unit(4)}, new RepPrintOp[Int])))))
   }
-
+/*
   def test2(i: Rep[Int]) = {
     testRepStream(i, RepStream[Int] map ({x: Rep[Int] => x * unit(2)}) map ({x: Rep[Int] => x + unit(1)}) map({x: Rep[Int] => x + unit(1)}) filter ({x: Rep[Int] => x > unit(4)}) print)
   }
-  
+*/  
   def test3(i: Rep[Int]) = {
     testRepStream(i, new RepMapOp[Int, Int]({x: Rep[Int] => 2 * x}, new RepPrintOp[Int]))
     testRepStream(i, new RepFilterOp[Int]({x: Rep[Int] => x > unit(3)}, new RepPrintOp[Int]))
@@ -49,7 +49,7 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     testRepStream(i, new RepFlatMapOp[Int, Int]({x => x :: x :: Nil}, new RepPrintOp[Int]))
     println(unit("===="))
   }
-  
+  /*
   def test3b(i: Rep[Int]) = {
     testRepStream(i, RepStream[Int] map ({x: Rep[Int] => 2 * x}) print)
     testRepStream(i, RepStream[Int] filter ({x: Rep[Int] => x > unit(3)}) print)
@@ -185,14 +185,15 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     testRepStream(i, s)
     println(unit("===="))
   }
-  
+*/  
   def test9(i: Rep[Int]) = {
 // TODO why can't I use IfThenElse here?
     //testRepStream(i, new RepGroupByOp[Int, Int]({x => x * unit(3)}, {x => if (x < unit(10)) { new RepMapOp[Int, Int]({x => -x}, new RepPrintOp[Int]) } else { new RepPrintOp[Int] }}))
+
     testRepStream(i, new RepGroupByOp[Int, Int]({x => 2 * x}, {k => new RepMapOp[Int, Int]({x => x + unit(10) * k}, new RepPrintOp[Int])}))
     println(unit("===="))
   }
-
+/*
   def test9b(i: Rep[Int]) = {
 // TODO why can't I use IfThenElse here?
     //testRepStream(i, new RepGroupByOp[Int, Int]({x => x * unit(3)}, {x => if (x < unit(10)) { new RepMapOp[Int, Int]({x => -x}, new RepPrintOp[Int]) } else { new RepPrintOp[Int] }}))
@@ -257,8 +258,26 @@ trait RepStreamProg extends RepStreamOps with NumericOps
 //  
 //  def test13b(i: Rep[Int]) = test13(i)
   
-
+*/
+  def test14(i: Rep[Int]) = {
+    val s = new RepGroupByOp[Int, Int]({x => x * unit(2)}, {k => 
+      new RepFilterOp[Int]({x => (x < k)}, 
+          new RepMapOp[Int, (Int, Int)]({x => (k, x)},
+              new RepReduceOp[(Int, Int)]({(x, y) => (y._1, x._2 + y._2)},
+                  new RepPrintOp[(Int, Int)])))})
+    s.onData(i)
+  }
   
+  def test15(i: Rep[Int]) = {
+    val s = new RepGroupByOp[Int, Int]({x => x * unit(2)}, {k => 
+      new RepFilterOp[Int]({x => (x < k)}, 
+          new RepMapOp[Int, (Int, Int)]({x => (k, x)},
+              new RepReduceOp[(Int, Int)]({(x, y) => (y._1, x._2 + y._2)},
+                  new RepPrintOp[(Int, Int)])))})
+    s.onData(i)
+    s.onData(i)
+    s.flush
+  }
 /* 
     val op24 = new AssertEqualsOp[List[(Int, Int)]](((2, 2) :: Nil) :: ((1,1) :: Nil) :: ((3,3) :: Nil) :: ((4,4) :: Nil) :: ((1,1) :: (1,1) :: Nil) :: Nil, "equiJoin")
     val (a3, b3) = StreamFunctions.equiJoin[Int, Int, Int](x => x, x => x, op24)
@@ -336,7 +355,7 @@ class TestRepStreamOps extends FileDiffSuite {
     }
     assertFileEqualsCheck(prefix+"stream1")
   }
-  
+/*  
   def testRepStream2 = {
     withOutFile(prefix+"stream2"){
       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
@@ -355,7 +374,7 @@ class TestRepStreamOps extends FileDiffSuite {
     }
     assertFileEqualsCheck(prefix+"stream2")
   }
-
+*/
   def testRepStream3 = {
     withOutFile(prefix+"stream3"){
       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
@@ -374,7 +393,7 @@ class TestRepStreamOps extends FileDiffSuite {
     }
     assertFileEqualsCheck(prefix+"stream3")
   }
-  
+/*  
   def testRepStream3b = {
     withOutFile(prefix+"stream3"){  // API same as non-API
       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
@@ -583,7 +602,7 @@ class TestRepStreamOps extends FileDiffSuite {
     }
     assertFileEqualsCheck(prefix+"stream8")
   }
-  
+  */
   def testRepStream9 = {
     withOutFile(prefix+"stream9"){
       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
@@ -602,7 +621,7 @@ class TestRepStreamOps extends FileDiffSuite {
     }
     assertFileEqualsCheck(prefix+"stream9")
   }
-  
+  /*
   def testRepStream9b = {
     withOutFile(prefix+"stream9"){
       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
@@ -734,7 +753,8 @@ class TestRepStreamOps extends FileDiffSuite {
       }
     }
     assertFileEqualsCheck(prefix+"stream12")
-  }    
+  }
+  */
   
 //  def testRepStream13 = {
 //    withOutFile(prefix+"stream13"){
@@ -772,5 +792,55 @@ class TestRepStreamOps extends FileDiffSuite {
 //      }
 //    }
 //    assertFileEqualsCheck(prefix+"stream13")
-//  }    
+//  }
+  
+  def testRepStream14 = {
+    withOutFile(prefix+"stream14"){
+      new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+        with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
+
+        val printWriter = new java.io.PrintWriter(System.out)
+
+        val codegen = new ScalaGenRepStreamOps with ScalaGenNumericOps
+          with ScalaGenOrderingOps { val IR: self.type = self }
+
+        codegen.emitSource(test14 _ , "test14", printWriter)
+        val test = compile(test14)
+        test(0)
+        test(1)
+        test(-1)
+        test(2)
+        test(-2)
+        test(2)
+        test(3)
+        test(4)
+      }
+    }
+    assertFileEqualsCheck(prefix+"stream14")
+  }
+
+  def testRepStream15 = {
+    withOutFile(prefix+"stream15"){
+      new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+        with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
+
+        val printWriter = new java.io.PrintWriter(System.out)
+
+        val codegen = new ScalaGenRepStreamOps with ScalaGenNumericOps
+          with ScalaGenOrderingOps { val IR: self.type = self }
+
+        codegen.emitSource(test15 _ , "test15", printWriter)
+        val test = compile(test15)
+        test(0)
+        test(1)
+        test(-1)
+        test(2)
+        test(-2)
+        test(2)
+        test(3)
+        test(4)
+      }
+    }
+    assertFileEqualsCheck(prefix+"stream15")
+  }
 }

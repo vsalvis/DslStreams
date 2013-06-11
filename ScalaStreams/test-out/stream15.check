@@ -1,0 +1,138 @@
+/*****************************************
+  Emitting Generated Code                  
+*******************************************/
+class test15(px1:Array[scala.collection.immutable.List[Any]],px12:Array[scala.Tuple2[Int, Int]],px14:Array[Boolean],px41:Array[Int],px52:Array[scala.Tuple2[Int, Int]],px54:Array[Boolean],px89:Array[scala.Tuple2[Int, Int]],px91:Array[Boolean]) extends ((Int)=>(Unit)) {
+def apply(x0:Int): Unit = {
+val x1 = px1 // static data: Array(List())
+val x2 = x1(0)
+val x4 = x2.isEmpty
+val x12 = px12 // static data: Array(null)
+val x14 = px14 // static data: Array(true)
+val x17 = if (x4) {
+()
+} else {
+val x6 = x2.head
+val x7 = x6.asInstanceOf[scala.Tuple2[Int, Int]]
+val x13 = x12(0) = x7
+val x8 = x2.tail
+val x9 = x8.head
+val x10 = x9.asInstanceOf[Boolean]
+val x15 = x14(0) = x10
+()
+}
+val x3 = x0 * 2
+val x18 = x0 < x3
+val x34 = if (x18) {
+val x20 = x14(0)
+val x32 = if (x20) {
+val x21 = x14(0) = false
+val x19 = (x3,x0)
+val x22 = x12(0) = x19
+x22
+} else {
+val x24 = x12(0)
+val x26 = x24._2
+val x27 = x26 + x0
+val x28 = (x3,x27)
+val x29 = x12(0) = x28
+val x30 = println(x28)
+()
+}
+()
+} else {
+()
+}
+val x35 = x12(0)
+val x36 = x14(0)
+val x37 = List()
+val x38 = x36 :: x37
+val x39 = x35 :: x38
+val x40 = x1(0) = x39
+val x41 = px41 // static data: Array(0)
+val x42 = x41(0) = x3
+val x43 = x1(0)
+val x44 = x43.isEmpty
+val x52 = px52 // static data: Array(null)
+val x54 = px54 // static data: Array(true)
+val x57 = if (x44) {
+()
+} else {
+val x46 = x43.head
+val x47 = x46.asInstanceOf[scala.Tuple2[Int, Int]]
+val x53 = x52(0) = x47
+val x48 = x43.tail
+val x49 = x48.head
+val x50 = x49.asInstanceOf[Boolean]
+val x55 = x54(0) = x50
+()
+}
+val x72 = if (x18) {
+val x58 = x54(0)
+val x70 = if (x58) {
+val x59 = x54(0) = false
+val x19 = (x3,x0)
+val x60 = x52(0) = x19
+x60
+} else {
+val x62 = x52(0)
+val x64 = x62._2
+val x65 = x64 + x0
+val x66 = (x3,x65)
+val x67 = x52(0) = x66
+val x68 = println(x66)
+()
+}
+()
+} else {
+()
+}
+val x73 = x52(0)
+val x74 = x54(0)
+val x75 = x74 :: x37
+val x76 = x73 :: x75
+val x77 = x1(0) = x76
+val x78 = x41(0) = x3
+val x79 = x1(0)
+val x80 = x41(0)
+val x81 = x79.isEmpty
+val x89 = px89 // static data: Array(null)
+val x91 = px91 // static data: Array(true)
+val x94 = if (x81) {
+()
+} else {
+val x83 = x79.head
+val x84 = x83.asInstanceOf[scala.Tuple2[Int, Int]]
+val x90 = x89(0) = x84
+val x85 = x79.tail
+val x86 = x85.head
+val x87 = x86.asInstanceOf[Boolean]
+val x92 = x91(0) = x87
+()
+}
+val x95 = x91(0) = true
+val x96 = println("flush")
+val x97 = x89(0)
+val x98 = x91(0)
+val x99 = x98 :: x37
+val x100 = x97 :: x99
+val x101 = x1(0) = x100
+()
+}
+}
+/*****************************************
+  End of Generated Code                  
+*******************************************/
+compilation: ok
+flush
+(2,2)
+flush
+flush
+(4,4)
+flush
+flush
+(4,4)
+flush
+(6,6)
+flush
+(8,8)
+flush

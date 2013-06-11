@@ -1,0 +1,63 @@
+/*****************************************
+  Emitting Generated Code                  
+*******************************************/
+class test14(px1:Array[scala.collection.immutable.List[Any]],px12:Array[scala.Tuple2[Int, Int]],px14:Array[Boolean],px41:Array[Int]) extends ((Int)=>(Unit)) {
+def apply(x0:Int): Unit = {
+val x1 = px1 // static data: Array(List())
+val x2 = x1(0)
+val x4 = x2.isEmpty
+val x12 = px12 // static data: Array(null)
+val x14 = px14 // static data: Array(true)
+val x17 = if (x4) {
+()
+} else {
+val x6 = x2.head
+val x7 = x6.asInstanceOf[scala.Tuple2[Int, Int]]
+val x13 = x12(0) = x7
+val x8 = x2.tail
+val x9 = x8.head
+val x10 = x9.asInstanceOf[Boolean]
+val x15 = x14(0) = x10
+()
+}
+val x3 = x0 * 2
+val x18 = x0 < x3
+val x34 = if (x18) {
+val x20 = x14(0)
+val x32 = if (x20) {
+val x21 = x14(0) = false
+val x19 = (x3,x0)
+val x22 = x12(0) = x19
+x22
+} else {
+val x24 = x12(0)
+val x26 = x24._2
+val x27 = x26 + x0
+val x28 = (x3,x27)
+val x29 = x12(0) = x28
+val x30 = println(x28)
+()
+}
+()
+} else {
+()
+}
+val x35 = x12(0)
+val x36 = x14(0)
+val x37 = List()
+val x38 = x36 :: x37
+val x39 = x35 :: x38
+val x40 = x1(0) = x39
+val x41 = px41 // static data: Array(0)
+val x42 = x41(0) = x3
+()
+}
+}
+/*****************************************
+  End of Generated Code                  
+*******************************************/
+compilation: ok
+(4,3)
+(4,5)
+(6,8)
+(8,12)
