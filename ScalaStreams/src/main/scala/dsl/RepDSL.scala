@@ -110,15 +110,16 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
   
     def flush = next.flush
   }
-/*    
+
   class RepDropOp[A: Manifest](n: Int, next: RepStreamOp[A])(implicit pos: SourceContext) extends RepStreamOp[A] {
     val state = new Array[Int](1)
     state(0) = n
 
-    def getState: List[Rep[Any]] = (staticData(state))(manifest[Array[Int]])(unit(0)) :: next.getState
-    def setState(s: List[Rep[Any]]) = s match {
-      case (head: Rep[Int]) :: tail => 
-        (staticData(state))(manifest[Array[Int]])(unit(0)) = head; next.setState(tail)
+    def getState: Rep[List[Any]] = (staticData(state))(manifest[Array[Int]])(unit(0)) :: next.getState
+    def setState(s: Rep[List[Any]]) = {
+      val head: Rep[Int] = rep_asinstanceof[Any, Int](s.head, manifest[Any], manifest[Int])
+      (staticData(state))(manifest[Array[Int]])(unit(0)) = head
+      next.setState(s.tail)
     }
 
     def onData(data: Rep[A]) = {
@@ -142,10 +143,11 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     val state = new Array[Boolean](1)
     state(0) = true
 
-    def getState: List[Rep[Any]] = (staticData(state))(manifest[Array[Boolean]])(unit(0)) :: next.getState
-    def setState(s: List[Rep[Any]]) = s match {
-      case (head: Rep[Boolean]) :: tail => 
-        (staticData(state))(manifest[Array[Boolean]])(unit(0)) = head; next.setState(tail)
+    def getState: Rep[List[Any]] = (staticData(state))(manifest[Array[Boolean]])(unit(0)) :: next.getState
+    def setState(s: Rep[List[Any]]) = {
+      val head: Rep[Boolean] = rep_asinstanceof[Any, Boolean](s.head, manifest[Any], manifest[Boolean])
+      (staticData(state))(manifest[Array[Boolean]])(unit(0)) = head
+      next.setState(s.tail)
     }
     
     def onData(data: Rep[A]) = {
@@ -167,10 +169,11 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     val state = new Array[Int](1)
     state(0) = n
 
-    def getState: List[Rep[Any]] = (staticData(state))(manifest[Array[Int]])(unit(0)) :: next.getState
-    def setState(s: List[Rep[Any]]) = s match {
-      case (head: Rep[Int]) :: tail => 
-        (staticData(state))(manifest[Array[Int]])(unit(0)) = head; next.setState(tail)
+    def getState: Rep[List[Any]] = (staticData(state))(manifest[Array[Int]])(unit(0)) :: next.getState
+    def setState(s: Rep[List[Any]]) = {
+      val head: Rep[Int] = rep_asinstanceof[Any, Int](s.head, manifest[Any], manifest[Int])
+      (staticData(state))(manifest[Array[Int]])(unit(0)) = head
+      next.setState(s.tail)
     }
 
     def onData(data: Rep[A]) = {
@@ -193,10 +196,11 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     val state = new Array[Boolean](1)
     state(0) = true
 
-    def getState: List[Rep[Any]] = (staticData(state))(manifest[Array[Boolean]])(unit(0)) :: next.getState
-    def setState(s: List[Rep[Any]]) = s match {
-      case (head: Rep[Boolean]) :: tail => 
-        (staticData(state))(manifest[Array[Boolean]])(unit(0)) = head; next.setState(tail)
+    def getState: Rep[List[Any]] = (staticData(state))(manifest[Array[Boolean]])(unit(0)) :: next.getState
+    def setState(s: Rep[List[Any]]) = {
+      val head: Rep[Boolean] = rep_asinstanceof[Any, Boolean](s.head, manifest[Any], manifest[Boolean])
+      (staticData(state))(manifest[Array[Boolean]])(unit(0)) = head
+      next.setState(s.tail)
     }
     
     def onData(data: Rep[A]) = {
@@ -218,10 +222,11 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     val state = new Array[Boolean](1)
     state(0) = false
 
-    def getState: List[Rep[Any]] = (staticData(state))(manifest[Array[Boolean]])(unit(0)) :: next.getState
-    def setState(s: List[Rep[Any]]) = s match {
-      case (head: Rep[Boolean]) :: tail => 
-        (staticData(state))(manifest[Array[Boolean]])(unit(0)) = head; next.setState(tail)
+    def getState: Rep[List[Any]] = (staticData(state))(manifest[Array[Boolean]])(unit(0)) :: next.getState
+    def setState(s: Rep[List[Any]]) = {
+      val head: Rep[Boolean] = rep_asinstanceof[Any, Boolean](s.head, manifest[Any], manifest[Boolean])
+      (staticData(state))(manifest[Array[Boolean]])(unit(0)) = head
+      next.setState(s.tail)
     }
     
     def onData(data: Rep[A]) = {
@@ -247,17 +252,22 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     fullState(0) = false
     nextState(0) = 0
     
-    def getState: List[Rep[Any]] =
+    def getState: Rep[List[Any]] =
         (staticData(fullState))(manifest[Array[Boolean]])(unit(0)) :: 
         (staticData(nextState))(manifest[Array[Int]])(unit(0)) :: 
         list_fromseq((staticData(bufferState))(manifest[Array[A]]).toSeq) ::
         next.getState
-    def setState(s: List[Rep[Any]]) = s match {
-      case (full: Rep[Boolean]) :: (nextI: Rep[Int]) :: (buffer: Rep[List[A]]) :: tail => 
-        (staticData(fullState))(manifest[Array[Boolean]])(unit(0)) = full
-        (staticData(nextState))(manifest[Array[Int]])(unit(0)) = nextI
-        array_copy(list_toarray(buffer), unit(0), (staticData(bufferState))(manifest[Array[A]]), unit(0), unit(n))
-        next.setState(tail)
+    def setState(s: Rep[List[Any]]) = {
+      val full: Rep[Boolean] = rep_asinstanceof[Any, Boolean](s.head, manifest[Any], manifest[Boolean])
+      val tail0: Rep[List[Any]] = s.tail
+      val nextI: Rep[Int] = rep_asinstanceof[Any, Int](tail0.head, manifest[Any], manifest[Int])
+      val tail1: Rep[List[Any]] = tail0.tail
+      val buffer: Rep[List[A]] = rep_asinstanceof[Any, List[A]](tail1.head, manifest[Any], manifest[List[A]])
+      
+      (staticData(fullState))(manifest[Array[Boolean]])(unit(0)) = full
+      (staticData(nextState))(manifest[Array[Int]])(unit(0)) = nextI
+      array_copy(list_toarray(buffer), unit(0), (staticData(bufferState))(manifest[Array[A]]), unit(0), unit(n))
+      next.setState(tail1.tail)
     }
   
     def onData(data: Rep[A]) = {
@@ -290,7 +300,6 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
       next.flush
     }
   }
-*/
 
   class RepGroupByOp[A: Manifest, B: Manifest](keyFun: Rep[A] => Rep[B], streamOpFun: Rep[B] => RepStreamOp[A])(implicit pos: SourceContext) extends RepStreamOp[A] {
     val streamOpState = new Array[List[Any]](1)
@@ -358,19 +367,19 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
       next.flush
     }
   }
-
+*/
   // TODO get this to compile!
   class RepDuplicateOp[A: Manifest](next1: RepStreamOp[A], next2: RepStreamOp[A])(implicit pos: SourceContext) extends RepStreamOp[A] {
-    def getState: List[Rep[Any]] = {
-      val l1: List[Rep[Any]] = next1.getState
-      val l2: List[Rep[Any]] = next2.getState
-      unit(l1.length) :: l1 ++ l2
+    def getState: Rep[List[Any]] = {
+      val l1: Rep[List[Any]] = next1.getState
+      val l2: Rep[List[Any]] = next2.getState
+      List((l1, l2))
     }
-    def setState(s: List[Rep[Any]]) = s match {
-      case (len: Rep[Int]) :: (l: List[Rep[Any]]) => len match {
-        case Const(length: Int) => next1.setState(l.take(length)); next2.setState(l.drop(length))
-      }
-    }
+    def setState(s: Rep[List[Any]]) = {
+      val lists: Rep[(List[Any], List[Any])] = rep_asinstanceof[Any, (List[Any], List[Any])](s.head, manifest[Any], manifest[(List[Any], List[Any])])
+      next1.setState(lists._1)
+      next2.setState(lists._2)
+    } 
 
     def onData(data: Rep[A]) = {
       next1.onData(data)
@@ -382,15 +391,16 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
       next2.flush
     }
   }
-  
+
   class RepAggregatorOp[A: Manifest](next: RepStreamOp[List[A]])(implicit pos: SourceContext) extends RepStreamOp[A] {
     val state = new Array[List[A]](1)
     state(0) = Nil
 
-    def getState: List[Rep[Any]] = (staticData(state))(manifest[Array[List[A]]])(unit(0)) :: next.getState
-    def setState(s: List[Rep[Any]]) = s match {
-      case (head: Rep[List[A]]) :: tail => 
-        (staticData(state))(manifest[Array[List[A]]])(unit(0)) = head; next.setState(tail)
+    def getState: Rep[List[Any]] = (staticData(state))(manifest[Array[List[A]]])(unit(0)) :: next.getState
+    def setState(s: Rep[List[Any]]) = {
+      val head: Rep[List[A]] = rep_asinstanceof[Any, List[A]](s.head, manifest[Any], manifest[List[A]])
+      (staticData(state))(manifest[Array[List[A]]])(unit(0)) = head
+      next.setState(s.tail)
     }
   
     def onData(data: Rep[A]) = {
@@ -410,7 +420,7 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
       next.flush
     }
   }
-  
+/*
   // TODO persist state. Naive way isn't working because need complete staging of RepStreamOps.
 //  class RepSplitMergeOp[A: Manifest, B: Manifest, C: Manifest](first: RepStreamOp[B] => RepStreamOp[A],
 //      second: RepStreamOp[C] => RepStreamOp[A], next: RepStreamOp[(B, C)])(implicit pos: SourceContext) extends RepStreamOp[A] {
@@ -582,7 +592,7 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     def getState(): Rep[List[Any]] = List()
     def setState(l: Rep[List[Any]]): Unit = {}
   }
-  /*
+
   class RepListInput[A: Manifest](list: Rep[List[A]], stream: RepStreamOp[A]) {
     list.map[A]({x => stream.onData(x); x})
   } 
@@ -621,15 +631,15 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     def fold[C: Manifest](f: (Rep[B], Rep[C]) => Rep[C], z: C) = new RepStream[A,C] {
       def into(out: RepStreamOp[C]) = self.into(new RepFoldOp(f, z, out))
     }
-    def groupByStream[K: Manifest](keyF: Rep[B] => Rep[K]) = new RepStream[A,HashMap[K, List[B]]] {
-      def into(out: RepStreamOp[HashMap[K, List[B]]]) = self.into(new RepGroupByStreamOp[B, K](keyF, out))
-    }
+//    def groupByStream[K: Manifest](keyF: Rep[B] => Rep[K]) = new RepStream[A,HashMap[K, List[B]]] {
+//      def into(out: RepStreamOp[HashMap[K, List[B]]]) = self.into(new RepGroupByStreamOp[B, K](keyF, out))
+//    }
     def map[C: Manifest](f: Rep[B] => Rep[C]) = new RepStream[A,C] {
       def into(out: RepStreamOp[C]) = self.into(new RepMapOp(f, out))
     }
-    def multiSplit[C: Manifest](num: Int, streams: (RepStreamOp[C], Int) => RepStreamOp[B]) = new RepStream[A, List[C]] {
-      def into(out: RepStreamOp[List[C]]) = self.into(new RepMultiSplitOp(num, streams, out))
-    }
+//    def multiSplit[C: Manifest](num: Int, streams: (RepStreamOp[C], Int) => RepStreamOp[B]) = new RepStream[A, List[C]] {
+//      def into(out: RepStreamOp[List[C]]) = self.into(new RepMultiSplitOp(num, streams, out))
+//    }
     def offset(n: Int) = new RepStream[A,B] {
       def into(out: RepStreamOp[B]) = self.into(new RepOffsetOp(n, out))
     }
@@ -639,10 +649,10 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     def reduce(f: (Rep[B], Rep[B]) => Rep[B]) = new RepStream[A,B] {
       def into(out: RepStreamOp[B]) = self.into(new RepReduceOp(f, out))
     }
-    def splitMerge[C: Manifest, D: Manifest](first: RepStream[B,C], second: RepStream[B,D]) = new RepStream[A,Pair[C,D]] {
-      def into(out: RepStreamOp[Pair[C,D]]) = self.into(
-          new RepSplitMergeOp({x: RepStreamOp[C] => first into x}, {y: RepStreamOp[D] => second into y}, out))
-    }
+//    def splitMerge[C: Manifest, D: Manifest](first: RepStream[B,C], second: RepStream[B,D]) = new RepStream[A,Pair[C,D]] {
+//      def into(out: RepStreamOp[Pair[C,D]]) = self.into(
+//          new RepSplitMergeOp({x: RepStreamOp[C] => first into x}, {y: RepStreamOp[D] => second into y}, out))
+//    }
     def take(n: Int) = new RepStream[A,B] {
       def into(out: RepStreamOp[B]) = self.into(new RepTakeOp(n, out))
     }
@@ -664,16 +674,15 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     def groupBy[K: Manifest](keyF: Rep[B] => Rep[K], streamF: Rep[K] => RepStreamOp[B]) = {
       self.into(new RepGroupByOp(keyF, streamF))
     }
-    def multiZipWith(num: Int, others: scala.collection.immutable.List[RepStream[A,B]], next: RepStreamOp[List[B]]) = {
-      val list = RepStreamFunctions.multiZipWith(num, next)
-      self.into(list(0)) :: others.zip(list.drop(1)).map({x => x._1.into(x._2)})
-    }
-    def zipWith[C,D: Manifest](other: RepStream[C,D], next: RepStreamOp[Pair[B, D]]) = {
-      val (a, b) = RepStreamFunctions.zipWith(next)
-      (self.into(a), other.into(b))
-    }
+//    def multiZipWith(num: Int, others: scala.collection.immutable.List[RepStream[A,B]], next: RepStreamOp[List[B]]) = {
+//      val list = RepStreamFunctions.multiZipWith(num, next)
+//      self.into(list(0)) :: others.zip(list.drop(1)).map({x => x._1.into(x._2)})
+//    }
+//    def zipWith[C,D: Manifest](other: RepStream[C,D], next: RepStreamOp[Pair[B, D]]) = {
+//      val (a, b) = RepStreamFunctions.zipWith(next)
+//      (self.into(a), other.into(b))
+//    }
   }
-*/
 }
 
 trait BooleanOpsExpOpt extends BooleanOpsExp {

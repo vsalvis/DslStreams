@@ -17,8 +17,6 @@ trait RepStreamProg extends RepStreamOps with NumericOps
   with OrderingOps with OverloadHack {
 
   def testRepStream(i: Rep[Int], m: RepStreamOp[Int]) = {
-//    new RepListInput[Int](List(unit(0), unit(1), unit(2), unit(3), unit(4), i), m)
-// not being unrolled... could optimize List(Seq).map to List(Seq.map)
     m.onData(unit(0))
     m.onData(unit(1))
     m.onData(unit(2))
@@ -34,11 +32,11 @@ trait RepStreamProg extends RepStreamOps with NumericOps
   def test1(i: Rep[Int]) = {
     testRepStream(i, new RepMapOp[Int, Int]({x: Rep[Int] => x * unit(2)}, new RepMapOp[Int, Int]({x: Rep[Int] => x + unit(1)}, new RepMapOp[Int, Int]({x: Rep[Int] => x + unit(1)}, new RepFilterOp[Int]({x: Rep[Int] => x > unit(4)}, new RepPrintOp[Int])))))
   }
-/*
+
   def test2(i: Rep[Int]) = {
     testRepStream(i, RepStream[Int] map ({x: Rep[Int] => x * unit(2)}) map ({x: Rep[Int] => x + unit(1)}) map({x: Rep[Int] => x + unit(1)}) filter ({x: Rep[Int] => x > unit(4)}) print)
   }
-*/  
+
   def test3(i: Rep[Int]) = {
     testRepStream(i, new RepMapOp[Int, Int]({x: Rep[Int] => 2 * x}, new RepPrintOp[Int]))
     testRepStream(i, new RepFilterOp[Int]({x: Rep[Int] => x > unit(3)}, new RepPrintOp[Int]))
@@ -49,7 +47,7 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     testRepStream(i, new RepFlatMapOp[Int, Int]({x => x :: x :: Nil}, new RepPrintOp[Int]))
     println(unit("===="))
   }
-  /*
+
   def test3b(i: Rep[Int]) = {
     testRepStream(i, RepStream[Int] map ({x: Rep[Int] => 2 * x}) print)
     testRepStream(i, RepStream[Int] filter ({x: Rep[Int] => x > unit(3)}) print)
@@ -112,9 +110,8 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     testRepStream(i, RepStream[Int].aggregate().print)
     println(unit("===="))
   }
-
+/*
   def test7(i: Rep[Int]) = {
-    // TODO can remove unused Variables/stores?
     val (s1, s2) = RepStreamFunctions.zipWith[Int, Int](new RepPrintOp[(Int, Int)])
     testRepStream(i, s1)
     testRepStream(i, new RepMapOp[Int, Int]({x => x + unit(1)}, s2))
@@ -185,22 +182,17 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     testRepStream(i, s)
     println(unit("===="))
   }
-*/  
+*/
   def test9(i: Rep[Int]) = {
-// TODO why can't I use IfThenElse here?
-    //testRepStream(i, new RepGroupByOp[Int, Int]({x => x * unit(3)}, {x => if (x < unit(10)) { new RepMapOp[Int, Int]({x => -x}, new RepPrintOp[Int]) } else { new RepPrintOp[Int] }}))
-
     testRepStream(i, new RepGroupByOp[Int, Int]({x => 2 * x}, {k => new RepMapOp[Int, Int]({x => x + unit(10) * k}, new RepPrintOp[Int])}))
     println(unit("===="))
   }
-/*
+
   def test9b(i: Rep[Int]) = {
-// TODO why can't I use IfThenElse here?
-    //testRepStream(i, new RepGroupByOp[Int, Int]({x => x * unit(3)}, {x => if (x < unit(10)) { new RepMapOp[Int, Int]({x => -x}, new RepPrintOp[Int]) } else { new RepPrintOp[Int] }}))
     testRepStream(i, RepStream[Int].groupBy({x => 2 * x}, {k: Rep[Int] => RepStream[Int].map({x => x + unit(10) * k}).print}))
     println(unit("===="))
   }
-
+/*
   def test10(i: Rep[Int]) = {
     testRepStream(i, new RepMultiSplitOp[Int, Int](3, {(s, n) => new RepMapOp[Int, Int]({x => x * unit(n)}, s)},
         new RepPrintOp[List[Int]]))
@@ -355,7 +347,7 @@ class TestRepStreamOps extends FileDiffSuite {
     }
     assertFileEqualsCheck(prefix+"stream1")
   }
-/*  
+
   def testRepStream2 = {
     withOutFile(prefix+"stream2"){
       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
@@ -374,7 +366,7 @@ class TestRepStreamOps extends FileDiffSuite {
     }
     assertFileEqualsCheck(prefix+"stream2")
   }
-*/
+
   def testRepStream3 = {
     withOutFile(prefix+"stream3"){
       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
@@ -393,7 +385,7 @@ class TestRepStreamOps extends FileDiffSuite {
     }
     assertFileEqualsCheck(prefix+"stream3")
   }
-/*  
+
   def testRepStream3b = {
     withOutFile(prefix+"stream3"){  // API same as non-API
       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
@@ -488,7 +480,7 @@ class TestRepStreamOps extends FileDiffSuite {
     }
     assertFileEqualsCheck(prefix+"stream5")
   }
-    
+  
   def testRepStream6 = {
     withOutFile(prefix+"stream6"){
       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
@@ -526,7 +518,7 @@ class TestRepStreamOps extends FileDiffSuite {
     }
     assertFileEqualsCheck(prefix+"stream6")
   }
-    
+/*    
   def testRepStream7 = {
     withOutFile(prefix+"stream7"){
       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
@@ -621,7 +613,7 @@ class TestRepStreamOps extends FileDiffSuite {
     }
     assertFileEqualsCheck(prefix+"stream9")
   }
-  /*
+  
   def testRepStream9b = {
     withOutFile(prefix+"stream9"){
       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
@@ -640,7 +632,7 @@ class TestRepStreamOps extends FileDiffSuite {
     }
     assertFileEqualsCheck(prefix+"stream9")
   }
-  
+  /*
   def testRepStream10 = {
     withOutFile(prefix+"stream10"){
       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
