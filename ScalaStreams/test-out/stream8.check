@@ -1,5 +1,3 @@
-error: illegal sharing of mutable objects Sym(69)
-at Sym(70)=Reflect(ArrayUpdate(Sym(1),Const(0),Sym(69)),Summary(false,false,false,false,false,List(Sym(69)),List(Sym(69)),List(Sym(1)),List(Sym(1))),List(Sym(2), Sym(13), Sym(24), Sym(35), Sym(46), Sym(57), Sym(69)))
 /*****************************************
   Emitting Generated Code                  
 *******************************************/
@@ -18,99 +16,105 @@ val x8 = List(0)
 val x9 = x2(0) = x8
 x9
 }
-val x12 = println(x2)
-val x13 = x1(0)
-val x14 = x13.contains(2)
-val x22 = if (x14) {
-val x15 = x13(2)
-val x16 = 1 :: x15
-val x17 = x13(2) = x16
-x17
+val x12 = x1(0) = x2
+val x13 = println(x2)
+val x14 = x1(0)
+val x15 = x14.contains(2)
+val x23 = if (x15) {
+val x16 = x14(2)
+val x17 = 1 :: x16
+val x18 = x14(2) = x17
+x18
 } else {
-val x19 = List(1)
-val x20 = x13(2) = x19
-x20
+val x20 = List(1)
+val x21 = x14(2) = x20
+x21
 }
-val x23 = println(x13)
-val x24 = x1(0)
-val x25 = x24.contains(4)
-val x33 = if (x25) {
-val x26 = x24(4)
-val x27 = 2 :: x26
-val x28 = x24(4) = x27
-x28
+val x24 = x1(0) = x14
+val x25 = println(x14)
+val x26 = x1(0)
+val x27 = x26.contains(4)
+val x35 = if (x27) {
+val x28 = x26(4)
+val x29 = 2 :: x28
+val x30 = x26(4) = x29
+x30
 } else {
-val x30 = List(2)
-val x31 = x24(4) = x30
-x31
+val x32 = List(2)
+val x33 = x26(4) = x32
+x33
 }
-val x34 = println(x24)
-val x35 = x1(0)
-val x36 = x35.contains(6)
-val x44 = if (x36) {
-val x37 = x35(6)
-val x38 = 3 :: x37
-val x39 = x35(6) = x38
-x39
-} else {
-val x41 = List(3)
-val x42 = x35(6) = x41
+val x36 = x1(0) = x26
+val x37 = println(x26)
+val x38 = x1(0)
+val x39 = x38.contains(6)
+val x47 = if (x39) {
+val x40 = x38(6)
+val x41 = 3 :: x40
+val x42 = x38(6) = x41
 x42
-}
-val x45 = println(x35)
-val x46 = x1(0)
-val x47 = x46.contains(8)
-val x55 = if (x47) {
-val x48 = x46(8)
-val x49 = 4 :: x48
-val x50 = x46(8) = x49
-x50
 } else {
-val x52 = List(4)
-val x53 = x46(8) = x52
-x53
+val x44 = List(3)
+val x45 = x38(6) = x44
+x45
 }
-val x56 = println(x46)
-val x57 = x1(0)
-val x58 = 2 * x0
-val x59 = x57.contains(x58)
-val x67 = if (x59) {
-val x60 = x57(x58)
-val x61 = x0 :: x60
-val x62 = x57(x58) = x61
-x62
+val x48 = x1(0) = x38
+val x49 = println(x38)
+val x50 = x1(0)
+val x51 = x50.contains(8)
+val x59 = if (x51) {
+val x52 = x50(8)
+val x53 = 4 :: x52
+val x54 = x50(8) = x53
+x54
 } else {
-val x64 = List(x0)
-val x65 = x57(x58) = x64
-x65
+val x56 = List(4)
+val x57 = x50(8) = x56
+x57
 }
-val x68 = println(x57)
-val x69 = collection.mutable.HashMap[Int,scala.collection.immutable.List[Int]]()
-val x70 = x1(0) = x69
-val x71 = println("flush")
-val x72 = x1(0)
-val x73 = x72.contains(84)
-val x81 = if (x73) {
-val x74 = x72(84)
-val x75 = 42 :: x74
-val x76 = x72(84) = x75
-x76
+val x60 = x1(0) = x50
+val x61 = println(x50)
+val x62 = x1(0)
+val x63 = 2 * x0
+val x64 = x62.contains(x63)
+val x72 = if (x64) {
+val x65 = x62(x63)
+val x66 = x0 :: x65
+val x67 = x62(x63) = x66
+x67
 } else {
-val x78 = List(42)
-val x79 = x72(84) = x78
-x79
+val x69 = List(x0)
+val x70 = x62(x63) = x69
+x70
 }
-val x82 = println(x72)
-val x83 = println("----")
-val x84 = println("====")
-x84
+val x73 = x1(0) = x62
+val x74 = println(x62)
+val x75 = x1(0)
+val x76 = x75.clear()
+val x77 = x1(0) = x75
+val x78 = println("flush")
+val x79 = x1(0)
+val x80 = x79.contains(84)
+val x88 = if (x80) {
+val x81 = x79(84)
+val x82 = 42 :: x81
+val x83 = x79(84) = x82
+x83
+} else {
+val x85 = List(42)
+val x86 = x79(84) = x85
+x86
+}
+val x89 = x1(0) = x79
+val x90 = println(x79)
+val x91 = println("----")
+val x92 = println("====")
+x92
 }
 }
 /*****************************************
   End of Generated Code                  
 *******************************************/
-error: illegal sharing of mutable objects Sym(150)
-at Sym(151)=Reflect(ArrayUpdate(Sym(87),Const(0),Sym(150)),Summary(false,false,false,false,false,List(Sym(150)),List(Sym(150)),List(Sym(87)),List(Sym(87))),List(Sym(88), Sym(98), Sym(108), Sym(118), Sym(128), Sym(138), Sym(150)))
 compilation: ok
 Map(0 -> List(0))
 Map(2 -> List(1), 0 -> List(0))

@@ -340,12 +340,19 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
       (staticData(streamOpState))(manifest[Array[List[Any]]])(unit(0)) = next.getState
     }
   }
-/*
-  // TODO non-mutable and illegal sharing error messages
+
   class RepGroupByStreamOp[A: Manifest, B: Manifest](keyFun: Rep[A] => Rep[B], next: RepStreamOp[HashMap[B, List[A]]])(implicit pos: SourceContext) extends RepStreamOp[A] {
     val state = new Array[scala.collection.mutable.HashMap[B, List[A]]](1)
     state(0) = new scala.collection.mutable.HashMap[B, List[A]]()
-
+    
+    def getState: Rep[List[Any]] =
+      (staticData(state))(manifest[Array[scala.collection.mutable.HashMap[B, List[A]]]])(unit(0)) ::
+      next.getState
+    def setState(s: Rep[List[Any]]) = {
+      val map: Rep[scala.collection.mutable.HashMap[B, List[A]]] = rep_asinstanceof[Any, scala.collection.mutable.HashMap[B, List[A]]](s.head, manifest[Any], manifest[scala.collection.mutable.HashMap[B, List[A]]])
+      (staticData(state))(manifest[Array[scala.collection.mutable.HashMap[B, List[A]]]])(unit(0)) = map
+      next.setState(s.tail)
+    }
     
     def onData(data: Rep[A]) = {
       val stateR: Rep[Array[HashMap[B, List[A]]]] = staticData(state)
@@ -357,18 +364,19 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
       } else {
         hashmap_unsafe_update(map, key, List(data))
       }
+      stateR(unit(0)) = map
       next.onData(map)
     }
     
-    def flush = { // why does hashmap_clear result in "write to non-mutable Sym..."?
+    def flush = {
       val stateR: Rep[Array[HashMap[B, List[A]]]] = staticData(state)
-      // why does this result in "illegal sharing of mutable objects"? Still works
-      stateR(unit(0)) = HashMap[B, List[A]]()
+      val map: Rep[HashMap[B, List[A]]] = stateR(unit(0))
+      hashmap_unsafe_clear(map)
+      stateR(unit(0)) = map
       next.flush
     }
   }
-*/
-  // TODO get this to compile!
+
   class RepDuplicateOp[A: Manifest](next1: RepStreamOp[A], next2: RepStreamOp[A])(implicit pos: SourceContext) extends RepStreamOp[A] {
     def getState: Rep[List[Any]] = {
       val l1: Rep[List[Any]] = next1.getState
@@ -631,9 +639,9 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
     def fold[C: Manifest](f: (Rep[B], Rep[C]) => Rep[C], z: C) = new RepStream[A,C] {
       def into(out: RepStreamOp[C]) = self.into(new RepFoldOp(f, z, out))
     }
-//    def groupByStream[K: Manifest](keyF: Rep[B] => Rep[K]) = new RepStream[A,HashMap[K, List[B]]] {
-//      def into(out: RepStreamOp[HashMap[K, List[B]]]) = self.into(new RepGroupByStreamOp[B, K](keyF, out))
-//    }
+    def groupByStream[K: Manifest](keyF: Rep[B] => Rep[K]) = new RepStream[A,HashMap[K, List[B]]] {
+      def into(out: RepStreamOp[HashMap[K, List[B]]]) = self.into(new RepGroupByStreamOp[B, K](keyF, out))
+    }
     def map[C: Manifest](f: Rep[B] => Rep[C]) = new RepStream[A,C] {
       def into(out: RepStreamOp[C]) = self.into(new RepMapOp(f, out))
     }
@@ -683,6 +691,8 @@ trait RepStreamOps extends IfThenElse with MiscOps with BooleanOps
 //      (self.into(a), other.into(b))
 //    }
   }
+  
+  def hashmap_unsafe_clear[K: Manifest, V:Manifest](m: Rep[HashMap[K,V]])(implicit pos: SourceContext): Rep[Unit]
 }
 
 trait BooleanOpsExpOpt extends BooleanOpsExp {
@@ -736,6 +746,7 @@ trait RepStreamOpsExp extends RepStreamOps
   
   // Use StaticData and Array to keep mutable state in the generated StreamOp.
   override def array_apply[T: Manifest](x: Exp[Array[T]], n: Exp[Int])(implicit pos: SourceContext): Exp[T] = reflectWrite(x)(ArrayApply(x, n))
+  override def hashmap_unsafe_clear[K: Manifest, V:Manifest](m: Exp[HashMap[K,V]])(implicit pos: SourceContext) = reflectEffect(HashMapClear(m))
 }
 
 trait ScalaGenRepStreamOps extends ScalaGenIfThenElse with ScalaGenMiscOps with ScalaGenBooleanOps with ScalaGenEqual

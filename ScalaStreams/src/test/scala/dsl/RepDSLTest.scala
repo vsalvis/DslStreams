@@ -170,7 +170,7 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     testRepStream(i, new RepMapOp[Int, Int]({x => x + unit(2)}, l3(2)))
 
   }
-    
+*/    
   def test8(i: Rep[Int]) = {
     val s = new RepGroupByStreamOp[Int, Int]({x => 2 * x}, new RepPrintOp[HashMap[Int, List[Int]]]) 
     testRepStream(i, s)
@@ -182,7 +182,7 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     testRepStream(i, s)
     println(unit("===="))
   }
-*/
+
   def test9(i: Rep[Int]) = {
     testRepStream(i, new RepGroupByOp[Int, Int]({x => 2 * x}, {k => new RepMapOp[Int, Int]({x => x + unit(10) * k}, new RepPrintOp[Int])}))
     println(unit("===="))
@@ -556,7 +556,7 @@ class TestRepStreamOps extends FileDiffSuite {
     }
     assertFileEqualsCheck(prefix+"stream7")
   }
-    
+    */
   def testRepStream8 = {
     withOutFile(prefix+"stream8"){
       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
@@ -594,7 +594,7 @@ class TestRepStreamOps extends FileDiffSuite {
     }
     assertFileEqualsCheck(prefix+"stream8")
   }
-  */
+
   def testRepStream9 = {
     withOutFile(prefix+"stream9"){
       new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
