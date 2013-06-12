@@ -1,0 +1,41 @@
+/*****************************************
+  Emitting Generated Code                  
+*******************************************/
+class test2$onData extends ((Int)=>(Unit)) {
+def apply(x0:Int): Unit = {
+val x1 = x0 * 2
+val x2 = x1 + 1
+val x3 = x2 + 1
+val x4 = x3 > 4
+val x7 = if (x4) {
+val x5 = println(x3)
+()
+} else {
+()
+}
+()
+}
+}
+/*****************************************
+  End of Generated Code                  
+*******************************************/
+/*****************************************
+  Emitting Generated Code                  
+*******************************************/
+class test2$flush extends ((Unit)=>(Unit)) {
+def apply(x9:Unit): Unit = {
+val x10 = println("flush")
+()
+}
+}
+/*****************************************
+  End of Generated Code                  
+*******************************************/
+compilation: ok
+compilation: ok
+6
+8
+flush
+6
+8
+flush

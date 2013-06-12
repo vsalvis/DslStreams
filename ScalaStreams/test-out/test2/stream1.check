@@ -1,0 +1,48 @@
+/*****************************************
+  Emitting Generated Code                  
+*******************************************/
+class test1$onData(px2:Array[Boolean],px1:Array[Int]) extends ((Int)=>(Unit)) {
+def apply(x0:Int): Unit = {
+val x2 = px2 // static data: Array(true)
+val x3 = x2(0)
+val x12 = if (x3) {
+val x4 = x2(0) = false
+val x1 = px1 // static data: Array(0)
+val x5 = x1(0) = x0
+x5
+} else {
+val x1 = px1 // static data: Array(0)
+val x7 = x1(0)
+val x8 = x7 + x0
+val x9 = x1(0) = x8
+val x10 = println(x8)
+()
+}
+()
+}
+}
+/*****************************************
+  End of Generated Code                  
+*******************************************/
+/*****************************************
+  Emitting Generated Code                  
+*******************************************/
+class test1$flush(px2:Array[Boolean]) extends ((Unit)=>(Unit)) {
+def apply(x14:Unit): Unit = {
+val x2 = px2 // static data: Array(true)
+val x15 = x2(0) = true
+val x16 = println("flush")
+()
+}
+}
+/*****************************************
+  End of Generated Code                  
+*******************************************/
+compilation: ok
+compilation: ok
+3
+6
+flush
+3
+6
+flush
