@@ -17,7 +17,7 @@ val x11 = println(4)
 val x12 = x0 > 3
 val x15 = if (x12) {
 val x13 = println(x0)
-()
+x13
 } else {
 ()
 }
@@ -36,7 +36,7 @@ val x19 = px19 // static data: Array(0)
 val x25 = x19(0)
 val x26 = x19(0) = x25
 val x27 = println(x25)
-()
+x27
 }
 val x30 = x20(0)
 val x39 = if (x30) {
@@ -50,7 +50,7 @@ val x34 = x19(0)
 val x35 = x34 + 1
 val x36 = x19(0) = x35
 val x37 = println(x35)
-()
+x37
 }
 val x40 = x20(0)
 val x49 = if (x40) {
@@ -64,7 +64,7 @@ val x44 = x19(0)
 val x45 = x44 + 2
 val x46 = x19(0) = x45
 val x47 = println(x45)
-()
+x47
 }
 val x50 = x20(0)
 val x59 = if (x50) {
@@ -78,7 +78,7 @@ val x54 = x19(0)
 val x55 = x54 + 3
 val x56 = x19(0) = x55
 val x57 = println(x55)
-()
+x57
 }
 val x60 = x20(0)
 val x69 = if (x60) {
@@ -92,7 +92,7 @@ val x64 = x19(0)
 val x65 = x64 + 4
 val x66 = x19(0) = x65
 val x67 = println(x65)
-()
+x67
 }
 val x70 = x20(0)
 val x79 = if (x70) {
@@ -106,7 +106,7 @@ val x74 = x19(0)
 val x75 = x74 + x0
 val x76 = x19(0) = x75
 val x77 = println(x75)
-()
+x77
 }
 val x80 = x20(0) = true
 val x81 = println("flush")
@@ -122,7 +122,7 @@ val x86 = x19(0)
 val x87 = x86 + 42
 val x88 = x19(0) = x87
 val x89 = println(x87)
-()
+x89
 }
 val x92 = println("----")
 val x93 = x20(0)
@@ -137,7 +137,7 @@ val x97 = x19(0)
 val x98 = x97 + 43
 val x99 = x19(0) = x98
 val x100 = println(x98)
-()
+x100
 }
 val x103 = px103 // static data: Array(1)
 val x104 = x103(0)

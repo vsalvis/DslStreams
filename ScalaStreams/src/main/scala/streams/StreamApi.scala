@@ -86,3 +86,43 @@ abstract class Stream[A,B] { self =>
     (self.into(a), other.into(b))
   }
 }
+
+
+//object APIStreamOp {
+//  def apply[A] = new APIStreamOp[A,A] {
+//    def into(out: StreamOp[A]): StreamOp[A] = out
+//  }
+//}
+//
+//abstract class APIStreamOp[A,B] { self =>
+//  def into(out: StreamOp[B]): StreamOp[A]
+//  def into[C](next: APIStreamOp[B, C]): APIStreamOp[A, C] = new APIStreamOp[A, C] {
+//    def into(out: StreamOp[C]) = self.into(next.into(out))
+//  }
+//  
+//  def print = into(new PrintlnOp[B]())
+//  
+//  def aggregate() = new APIStreamOp[A,List[B]] {...}
+//  def drop(n: Int) = new APIStreamOp[A,B] {...}
+//  def dropWhile(p: B => Boolean) = new APIStreamOp[A,B] {...}
+//  def filter(p: B => Boolean) = new APIStreamOp[A,B] {...}
+//  def flatMap[C](f: B => List[C]) = new APIStreamOp[A,C] {...}
+//  def fold[C](f: (B, C) => C, z: C) = new APIStreamOp[A,C] {...}
+//  def groupByAPIStreamOp[K](keyF: B => K) = new APIStreamOp[A,Map[K, List[B]]] {...}
+//  def map[C](f: B => C) = new APIStreamOp[A,C] {...}
+//  def multiSplit[C](num: Int, APIStreamOps: (StreamOp[C], Int) => StreamOp[B]) = new APIStreamOp[A, List[C]] {...}
+//  def offset(n: Int) = new APIStreamOp[A,B] {...}
+//  def prepend(list: List[B]) = new APIStreamOp[A,B] {...}
+//  def reduce(f: (B, B) => B) = new APIStreamOp[A,B] {...}
+//  def splitMerge[C,D](first: APIStreamOp[B,C], second: APIStreamOp[B,D]) = new APIStreamOp[A,Pair[C,D]] {...}
+//  def take(n: Int) = new APIStreamOp[A,B] {...}
+//  def takeWhile(p: B => Boolean) = new APIStreamOp[A,B] {...}
+//  
+//  // special functions: Those are not simple Streams because they have
+//  // multiple in- or output streams
+//  def duplicate(first: StreamOp[B], second: StreamOp[B]) = {...}
+//  def equiJoin[C, D, K](other: APIStreamOp[C,D], keyFunThis: B => K, keyFunOther: D => K, next: StreamOp[List[(B,D)]]) = {...}
+//  def groupBy[K](keyF: B => K, APIStreamOpF: K => StreamOp[B]) = {...}
+//  def multiZipWith(num: Int, others: List[APIStreamOp[A,B]], next: StreamOp[List[B]]) = {...}
+//  def zipWith[C,D](other: APIStreamOp[C,D], next: StreamOp[Pair[B, D]]) = {...}
+//}

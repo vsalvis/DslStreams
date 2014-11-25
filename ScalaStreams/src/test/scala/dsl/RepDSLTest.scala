@@ -252,7 +252,7 @@ trait RepStreamProg extends RepStreamOps with NumericOps
   
 */
   def test14(i: Rep[Int]) = {
-    val s = new RepGroupByOp[Int, Int]({x => x * unit(2)}, {k => 
+    val s: RepStreamOp[Int] = new RepGroupByOp[Int, Int]({x => x * unit(2)}, {k => 
       new RepFilterOp[Int]({x => (x < k)}, 
           new RepMapOp[Int, (Int, Int)]({x => (k, x)},
               new RepReduceOp[(Int, Int)]({(x, y) => (y._1, x._2 + y._2)},
@@ -269,6 +269,13 @@ trait RepStreamProg extends RepStreamOps with NumericOps
     s.onData(i)
     s.onData(i)
     s.flush
+  }
+
+  def test16(i: Rep[Int]) = {
+    val s = new RepGroupByOp[Int, Int]({x => x * unit(2)}, {k => 
+      new RepAddFoldOp[Int, Int]({_ + _}, 0, k, new RepPrintOp[Int]())})
+      // last + 2*data + data
+    s.onData(i)
   }
 /* 
     val op24 = new AssertEqualsOp[List[(Int, Int)]](((2, 2) :: Nil) :: ((1,1) :: Nil) :: ((3,3) :: Nil) :: ((4,4) :: Nil) :: ((1,1) :: (1,1) :: Nil) :: Nil, "equiJoin")
@@ -836,4 +843,30 @@ class TestRepStreamOps extends FileDiffSuite {
     assertFileEqualsCheck(prefix+"stream15")
   }
 
+  def testRepStream16 = {
+    withOutFile(prefix+"stream16"){
+      new RepStreamProg with RepStreamOpsExp with NumericOpsExp with NumericOpsExpOpt
+        with OrderingOpsExp with OrderingOpsExpOpt with ScalaCompile{ self =>
+
+        val printWriter = new java.io.PrintWriter(System.out)
+
+        val codegen = new ScalaGenRepStreamOps with ScalaGenNumericOps
+          with ScalaGenOrderingOps { val IR: self.type = self }
+
+        codegen.emitSource(test16 _ , "test16", printWriter)
+        val test = compile(test16)
+//  def test16(i: Rep[Int]) = {
+//    val s = new RepGroupByOp[Int, Int]({x => x * unit(2)}, {k => 
+//      new RepAddFoldOp[Int, Int]({_ + _}, 0, k, new RepPrintOp[Int]())})
+//      // last + 2*data + data
+//    s.onData(i)
+//  }
+        test(1)
+        test(1)
+        test(1)
+        test(2)
+      }
+    }
+    assertFileEqualsCheck(prefix+"stream16")
+  }
 }

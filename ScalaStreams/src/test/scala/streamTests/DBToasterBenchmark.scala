@@ -34,16 +34,17 @@ object DBToasterBenchmark extends PerformanceTest.Quickbenchmark {
         toast => toast(toastUpdateSplit(printIntermediate))
       }
     }
-    measure method "toastAggregateAndRecompute" in {
-      using(toasts) in {
-        toast => toast(toastAggregateAndRecompute(printIntermediate))
-      }
-    }
-    measure method "originalDBToaster" in {
-      using(filenames) in {
-        filename => new dbtoaster.DBToasterQuery1(filename).run(_ => ())
-      }
-    }
+    
+//    measure method "toastAggregateAndRecompute" in {
+//      using(toasts) in {
+//        toast => toast(toastAggregateAndRecompute(printIntermediate))
+//      }
+//    }
+//    measure method "originalDBToaster" in {
+//      using(filenames) in {
+//        filename => new dbtoaster.DBToasterQuery1(filename).run(_ => ())
+//      }
+//    }
   }
 }
 
